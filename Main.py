@@ -3,8 +3,8 @@ Author: Cameron Varley
 Date: March 21, 2014
 Filename: Game.py
 Description: Text based war game using python
-Version: 1.2.0
-versions since relese: 4
+Version: 1.2.5
+versions since relese: 6
 '''
 
 import os
@@ -21,9 +21,9 @@ battles_won = 0
 total_battles = 0
 discount = 0
 token = 0
-HP = 5
+HP = 50
 powerups = [0, 0] # Nuke($1250), Laser($650)
-version = "1.2.0"
+version = "1.2.5"
 
 # Custom Game Functions
 def wait_clear(mode, n='', mode1=''):
@@ -37,11 +37,9 @@ def wait_clear(mode, n='', mode1=''):
 
 # Changelog
 def changelog():
-	print ("Changes since 1.1.5\n")
-	print ("1. Added HP to detemin the end of game")
-	print ("2. Added hospital. Hospital will give you 15HP for $225")
-	print ("3. Added item store")
-	print ("4. New item: First aid")
+	print ("Changes since 1.2.0\n")
+	print ("1. Fixed hospital crash if user enters nothing")
+	print ("2. Health Back to 50")
 	print ("For a full changleog since the start goto: https://github.com/Camvar97/Text-Wars")
 	print ("To provide user feedback email: Cam.avarley@gmail.com with the subject TextWars\n")
 		
@@ -574,8 +572,10 @@ def hospital(mode):
 	print ("Hospital\n")
 	print ("Treatment: $225\15\n")
 	print ("How many treatment would you like to take: ", end="")
-	buy = int(input())
-	money_ispos = money - buy * 225
+	buy = input()
+	if buy == "":
+		menu(mode)
+	money_ispos = money - buy*225
 	if money > 0 and money_ispos > 0:
 		HP += buy*15
 		money -= buy*225
