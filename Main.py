@@ -3,8 +3,8 @@ Author: Cameron Varley
 Date: March 21, 2014
 Filename: Game.py
 Description: Text based war game using python
-Version: 1.1.5
-versions since relese: 4
+Version: 1.2.0
+versions since relese: 5
 '''
 
 import os
@@ -21,8 +21,9 @@ battles_won = 0
 total_battles = 0
 discount = 0
 token = 0
+HP = 5
 powerups = [0, 0] # Nuke($1250), Laser($650)
-version = "1.1.0"
+version = "1.2.0"
 
 # Custom Game Functions
 def wait_clear(mode, n='', mode1=''):
@@ -36,8 +37,11 @@ def wait_clear(mode, n='', mode1=''):
 
 # Changelog
 def changelog():
-	print ("Changes since 1.1.0\n")
-	print ("1. Offical forced retirement when money is less than 100 and you have zero troops, tokens and discounts")
+	print ("Changes since 1.1.5\n")
+	print ("1. Added HP to detemin the end of game")
+	print ("2. Added hospital. Hospital will give you 15HP for $225")
+	print ("3. Added item store")
+	print ("4. New item: First aid")
 	print ("For a full changleog since the start goto: https://github.com/Camvar97/Text-Wars")
 	print ("To provide user feedback email: Cam.avarley@gmail.com with the subject TextWars\n")
 		
@@ -53,9 +57,8 @@ def intro():
 	print ("let's get started with how the game works\n\n")
 	print ("You will be given $500 to start")
 	print ("You can fight, purchase, or retire if you want.")
-	print ("When you reach -$500 and you have no troops the game ends\n")
-	print ("Please wait 10s for the game to load")
-	wait_clear("wait", n=10, mode1="clear")
+	print ("When you reach 0 HP the game ends\n")
+	cont = input("Press enter to continue")
 	play_b4()
 	
 # Plyed B4
@@ -106,12 +109,12 @@ def menu(mode):
 		print ("Welcome to the training menu.\nYou will always revert to this menu anytime you finish a task!\n")
 		print ("Training Menu")
 		print ("---------------------------------")
-		print ("1. Store (You can purchase stuff here)\n2. Battle (Fight a random enemy)\n3. Scout (Search the area. Fight or Loot)\n4. Gamble (Use your tokens here!)\n5. Retire (This is where you can end your game)")
+		print ("1. Store (You can purchase stuff here)\n2. Battle (Fight a random enemy)\n3. Scout (Search the area. Fight or Loot)\n4. Gamble (Use your tokens here!)\n5. Hospital (15 HP for $225)\n6. Retire (This is where you can end your game)")
 	elif mode == 2:
 		info(mode)
 		print ("Main Menu")
 		print ("---------------------------------")
-		print ("1. Store\n2. Battle\n3. Scout\n4. Gamble\n5. Retire")
+		print ("1. Store\n2. Battle\n3. Scout\n4. Gamble\n5. Hospital\n6. Retire")
 	print ("Choose an item: ", end="")
 	m_location = input()
 	if m_location == '1':
@@ -128,6 +131,9 @@ def menu(mode):
 		gamble(mode)
 	elif m_location == '5':
 		wait_clear("clear")
+		hospital(mode)
+	elif m_location == '6':
+		wait_clear("clear")
 		retire(mode)
 	else:
 		print ("Invalid Response")
@@ -142,6 +148,7 @@ def store(mode):
 	global discount
 	global buy_troops
 	global token
+	global HP
 	
 	info(mode)
 	if mode == 1:
@@ -149,11 +156,11 @@ def store(mode):
 		print ("This is where you can purchase troops, powerups, and tokens\n")
 		print ("Training Store")
 		print ("---------------------------------")
-		print ("1. Buy Troops\n2. Buy Powerup\n3. Buy Tokens\n4. Main Menu")
+		print ("1. Buy Troops\n2. Buy Powerup\n3. Buy Tokens\n4. Buy Items\n5. Main Menu")
 	elif mode == 2:
 		print ("Store")
 		print ("---------------------------------")
-		print ("1. Buy Troops\n2. Buy Powerup\n3. Buy Tokens\n4. Main Menu")
+		print ("1. Buy Troops\n2. Buy Powerup\n3. Buy Tokens\n4. Buy Items\n5. Main Menu")
 	print ("Choose an item: ", end="")
 	m_location = input()
 	if m_location == '1': # Troops
@@ -241,7 +248,33 @@ def store(mode):
 			print ("We don't support gambling addictions")
 			wait_clear("wait", n=2, mode1='clear')
 			store(mode)
-	elif m_location == '4': # Main Menu
+	elif m_location == '4': # Item Store
+		info(mode)
+		print ("Item Store\n")
+		print ("Items")
+		print ("1. First Aid kit\n")
+		print ("Please enter the number for the item you would like to buy: ", end="")
+		item_loc = int(input())
+		if item_loc == 1:
+			print ("You choose the first aid kit.")
+			print ("They are $75 for 5 HP")
+			print ("How many would you like to buy: ", end="")
+			buy = int(input())
+			money_ispos = money - buy * 10
+			if money > 0 and money_ispos > 0:
+				HP += buy*5
+				money -= buy*75
+				print ("\nNew amount of HP: ",HP)
+				print ("New balance: ", money)
+				wait_clear("wait", n=2, mode1='clear')
+				store(mode)
+			else:
+				print ("We don't support credit card")
+				wait_clear("wait", n=2, mode1='clear')
+				store(mode)
+		else:
+			store(mode)
+	elif m_location == '5': # Main Menu
 		menu(mode)
 	else:
 		print ("Invalid Response")
@@ -256,6 +289,7 @@ def battle(mode):
 	global battles_won
 	global money
 	global enemy_troops
+	global HP
 	
 	if mode == 1:
 		info(mode)
@@ -302,15 +336,17 @@ def battle(mode):
 		troops = troops // 2
 		print ("we now have: ", troops, " troops.")
 		wait_clear("wait", n=7, mode1="clear")
+		HP -= 3
 		transport()
 		menu(mode)
 	elif enemy_troops > troops and enemy_troops >= 1:
 		print ("Sir, they attacked before we had the chance.")
 		print ("We lost a member of our family today")
-		troops = troops - 1
+		troops -= 1
 		print ("we now have: ", troops, " troops.")
-		total_battles = total_battles + 1
+		total_battles += 1
 		wait_clear("wait", n=7, mode1="clear")
+		HP -= 1
 		transport()
 		menu(mode)
 	elif enemy_troops < troops and enemy_troops >= 1:
@@ -318,23 +354,23 @@ def battle(mode):
 		print ("we earned: ", enemy_troops*10)
 		print ("New balance: ", money+enemy_troops*10)
 		loot()
-		money = money + enemy_troops*10
-		battles_won = battles_won+1
-		total_battles = total_battles + 1
+		money += enemy_troops*10
+		battles_won += 1
+		total_battles += 1
 		wait_clear("wait", n=7, mode1="clear")
 		menu(mode)
 	elif enemy_troops == 0:
 		print ("Commander they've disapeared!")
 		print ("We couldn't attack")
-		total_battles = total_battles + 1
+		total_battles += 1
 		wait_clear("wait", n=7, mode1="clear")
 		menu(mode)
 	else:
 		print ("It was a tie")
 		print ("auto re-roll")
-		total_battles = total_battles + 1
+		total_battles += 1
 		wait_clear("wait", n=7, mode1="clear")
-		menu(mode)
+		battle(mode)
 	
 # Scout
 def scout(mode):
@@ -439,6 +475,7 @@ def info(mode):
 	if total_battles % 5 == 0 and total_battles > 0:
 		tax()
 		menu(mode)
+	print ("HP: ",HP)
 	print ("\n")
 	
 	game_loss(mode)
@@ -524,7 +561,31 @@ def tax():
 
 # Game Over
 def game_loss(mode):
-	if money < -500 and discount == 0 and troops == 0 and token == 0:
+	if HP == 0:
 		retire(mode)		
 
+# Hospital
+def hospital(mode):
+	global HP
+	global money
+	
+	info(mode)
+	
+	print ("Hospital\n")
+	print ("Treatment: $225\15\n")
+	print ("How many treatment would you like to take: ", end="")
+	buy = int(input())
+	money_ispos = money - buy * 225
+	if money > 0 and money_ispos > 0:
+		HP += buy*15
+		money -= buy*225
+		print ("New amount of HP: ", HP)
+		print ("New balance: ", money)
+		wait_clear("wait", n=2, mode1='clear')
+		menu(mode)
+	else:
+		print ("We don't support credit cards")
+		wait_clear("wait", n=2, mode1='clear')
+		menu(mode)
+		
 intro() 
