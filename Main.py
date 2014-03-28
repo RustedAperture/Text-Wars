@@ -4,7 +4,7 @@ Date: March 21, 2014
 Filename: Game.py
 Description: Text based war game using python
 Version: 1.2.0
-versions since relese: 5
+versions since relese: 4
 '''
 
 import os
