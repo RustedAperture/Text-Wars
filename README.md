@@ -5,7 +5,11 @@ Created by: Cameron Varley
 Description: A fun text game where you can battle a enemy, gamble, or become a millionaire
 
 ##Change Log
-####Version 1.2.0 (Latest)
+####Version 1.2.5 (Latest)
+1. Fixed Hospital crash
+2. returned health to 50 at start
+
+####Version 1.2.0
 1. Added HP to detemin the end of game
 2. Added hospital. Hospital will give you 15HP for $225
 3. Added item store
