@@ -5,7 +5,13 @@ Created by: Cameron Varley
 Description: A fun text game where you can battle a enemy, gamble, or become a millionaire
 
 ##Change Log
-####Version 1.1.5 (Latest)
+####Version 1.2.0 (Latest)
+1. Added HP to detemin the end of game
+2. Added hospital. Hospital will give you 15HP for $225
+3. Added item store
+4. New item: First aid
+
+####Version 1.1.5
 1. Offical forced retirement when money is less than -500 and you have zero troops, tokens and discounts
 
 ####Version 1.1.0
