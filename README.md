@@ -5,7 +5,10 @@ Created by: Cameron Varley
 Description: A fun text game where you can battle a enemy, gamble, or become a millionaire
 
 ##Change Log
-####version 1.1.0 (latest)
+####Version 1.1.5 (Latest)
+1. Offical forced retirement when money is less than -500 and you have zero troops, tokens and discounts
+
+####Version 1.1.0
 1. Added Powerup store
 2. Introduced Powerups (Nukes and Lasers)
 
