@@ -3,8 +3,8 @@ Author: Cameron Varley
 Date: March 21, 2014
 Filename: Game.py
 Description: Text based war game using python
-Version: 1.1.0
-versions since relese: 3
+Version: 1.1.5
+versions since relese: 4
 '''
 
 import os
@@ -36,10 +36,10 @@ def wait_clear(mode, n='', mode1=''):
 
 # Changelog
 def changelog():
-	print ("Changes since 1.0.5\n")
-	print ("1. Added the Powerup store")
-	print ("2. Powerups are now fully functional")
-	print ("For a full changleog siince the start goto:\nhttps://github.com/Camvar97/Text-Wars\n")
+	print ("Changes since 1.1.0\n")
+	print ("1. Offical forced retirement when money is less than 100 and you have zero troops, tokens and discounts")
+	print ("For a full changleog since the start goto: https://github.com/Camvar97/Text-Wars")
+	print ("To provide user feedback email: Cam.avarley@gmail.com with the subject TextWars\n")
 		
 # Intro Sequence
 def intro():
@@ -53,7 +53,7 @@ def intro():
 	print ("let's get started with how the game works\n\n")
 	print ("You will be given $500 to start")
 	print ("You can fight, purchase, or retire if you want.")
-	print ("When you lose your last man the game ends\n")
+	print ("When you reach -$500 and you have no troops the game ends\n")
 	print ("Please wait 10s for the game to load")
 	wait_clear("wait", n=10, mode1="clear")
 	play_b4()
@@ -440,6 +440,8 @@ def info(mode):
 		tax()
 		menu(mode)
 	print ("\n")
+	
+	game_loss(mode)
 
 # Enemy Generation
 def enemy():
@@ -476,6 +478,7 @@ def loot():
 	elif loot == 9:
 		extra_troops += 2
 		print ("You've taken 2 hostage for your own troops")
+		wait_clear("wait", n=2)
 		transport()
 	else:
 		print ("You didn't find any loot")
@@ -518,5 +521,10 @@ def tax():
 	else:
 		money = money + tax
 	total_battles = 0
+
+# Game Over
+def game_loss(mode):
+	if money < -500 and discount == 0 and troops == 0 and token == 0:
+		retire(mode)		
 
 intro() 
