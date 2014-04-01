@@ -8,6 +8,7 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 ####Version 1.3.0 (latest)
 1. Added a try-except to any integer input
 2. Added debug menu accessible by using wwssadadba on main menu
+3. Users can no longer by negative objects
 
 ####Version 1.2.5
 1. Fixed Hospital crash
