@@ -5,7 +5,11 @@ Created by: Cameron Varley
 Description: A fun text game where you can battle a enemy, gamble, or become a millionaire
 
 ##Change Log
-####Version 1.2.5 (Latest)
+####Version 1.3.0 (latest)
+1. Added a try-except to any integer input
+2. Added debug menu accessible by using wwssadadba on main menu
+
+####Version 1.2.5
 1. Fixed Hospital crash
 2. returned health to 50 at start
 
