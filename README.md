@@ -4,6 +4,8 @@ Created by: Cameron Varley
 
 Description: A fun text game where you can battle a enemy, gamble, or become a millionaire
 
+Requirement: Python3
+
 ##Change Log
 ####Version 1.3.0 (latest)
 1. Added a try-except to any integer input
