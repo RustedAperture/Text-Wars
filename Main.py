@@ -3,8 +3,8 @@ Author: Cameron Varley
 Date: March 21, 2014
 Filename: Game.py
 Description: Text based war game using python
-Version: 1.2.5
-versions since relese: 6
+Version: 1.3.0
+versions since relese: 7
 '''
 
 import os
@@ -23,7 +23,7 @@ discount = 0
 token = 0
 HP = 50
 powerups = [0, 0] # Nuke($1250), Laser($650)
-version = "1.2.5"
+version = "1.3.0"
 
 # Custom Game Functions
 def wait_clear(mode, n='', mode1=''):
@@ -37,9 +37,8 @@ def wait_clear(mode, n='', mode1=''):
 
 # Changelog
 def changelog():
-	print ("Changes since 1.2.0\n")
-	print ("1. Fixed hospital crash if user enters nothing")
-	print ("2. Health Back to 50")
+	print ("Changes since 1.2.5\n")
+	print ("1. Added debug screen")
 	print ("For a full changleog since the start goto: https://github.com/Camvar97/Text-Wars")
 	print ("To provide user feedback email: Cam.avarley@gmail.com with the subject TextWars\n")
 		
@@ -102,6 +101,7 @@ def training():
 
 # Menu Sequence
 def menu(mode):
+	transport(mode)
 	if mode == 1:
 		info(mode)
 		print ("Welcome to the training menu.\nYou will always revert to this menu anytime you finish a task!\n")
@@ -133,6 +133,9 @@ def menu(mode):
 	elif m_location == '6':
 		wait_clear("clear")
 		retire(mode)
+	elif m_location == 'wwssadadba':
+		wait_clear("clear")
+		debug(mode)
 	else:
 		print ("Invalid Response")
 		wait_clear("wait", n=2, mode1="clear")
@@ -169,8 +172,17 @@ def store(mode):
 		else:
 			print ("Troops: $100/militant\n")
 		print ("How many would you like to buy: ", end="")
-		buy = int(input())
-		buy_troops = buy
+		try:
+			buy = int(input())
+			buy_troops = buy
+		except:
+			print ("Do the math yourself!")
+			wait_clear("wait", n=2, mode1="clear")
+			store(mode)
+		if buy_troops < 0:
+			print ("NO! How dare you try that!")
+			wait_clear("wait", n=2, mode1="clear")
+			store(mode)
 		if discount >= 1:
 				if buy_troops > discount:
 					print ("You don't have enough discounts for that")
@@ -184,18 +196,28 @@ def store(mode):
 					print ("New amount of troops: ", troops)
 					print ("New balance: ", money)
 					wait_clear("wait", n=2, mode1='clear')
-					transport()
+					transport(mode)
 					buy_troops = 0
 					store(mode)
 		else:
-			troops += buy
-			money -= buy*100
-			print ("New amount of troops: ", troops)
-			print ("New balance: ", money)
-			wait_clear("wait", n=2, mode1='clear')
-			transport()
-			buy_troops = 0
-			store(mode)
+			money_isnull = money - buy*100
+			if money_isnull <= -100000:
+				print ("We're sorry but we can't provide you with the resources.")
+				wait_clear("wait", n=3, mode1="clear")
+				menu(mode)
+			elif money <= -100000:
+				print ("I'm sorry but we can't give you a loan at this time.")
+				wait_clear("wait", n=3, mode1="clear")
+				menu(mode)
+			else:
+				troops += buy
+				money -= buy*100
+				print ("New amount of troops: ", troops)
+				print ("New balance: ", money)
+				wait_clear("wait", n=2, mode1='clear')
+				transport(mode)
+				buy_troops = 0
+				store(mode)
 	elif m_location == '2': # Powerups
 		wait_clear("clear")
 		info(mode)
@@ -205,7 +227,16 @@ def store(mode):
 		option = input()
 		if option.lower() == "nuke":
 			print ("How many nukes: ", end="")
-			buy = int(input())
+			try:
+				buy = int(input())
+			except:
+				print ("An error with your input occured!")
+				wait_clear("wait", n=2, mode1="clear")
+				store(mode)
+			if buy < 0:
+				print ("NO! How dare you try that!")
+				wait_clear("wait", n=2, mode1="clear")
+				store(mode)
 			if buy > 0:
 				powerups[0] += 1
 				money -= buy*1250
@@ -215,9 +246,18 @@ def store(mode):
 				store(mode)
 		elif option.lower() == "laser":
 			print ("How many lasers: ", end="")
-			buy = int(input())
+			try:
+				buy = int(input())
+			except:
+				print ("An error with your input occured!")
+				wait_clear("wait", n=2, mode1="clear")
+				store(mode)
+			if buy < 0:
+				print ("NO! How dare you try that!")
+				wait_clear("wait", n=2, mode1="clear")
+				store(mode)
 			if buy > 0:
-				powerups[0] += 1
+				powerups[1] += 1
 				money -= buy*650
 				store(mode)
 			else:
@@ -233,8 +273,17 @@ def store(mode):
 		info(mode)
 		print ("Tokens: $10\n")
 		print ("How many would you like to buy: ", end="")
-		buy = int(input())
-		money_ispos = money - buy * 10
+		try:
+			buy = int(input())
+			money_ispos = money - buy * 10
+		except:
+			print ("An error with your input occured!")
+			wait_clear("wait", n=2, mode1="clear")
+			store(mode)
+		if buy < 0:
+			print ("NO! How dare you try that!")
+			wait_clear("wait", n=2, mode1="clear")
+			store(mode)
 		if money > 0 and money_ispos > 0:
 			token += buy
 			money -= buy*10
@@ -252,13 +301,25 @@ def store(mode):
 		print ("Items")
 		print ("1. First Aid kit\n")
 		print ("Please enter the number for the item you would like to buy: ", end="")
-		item_loc = int(input())
+		item_loc = input()
+		if item_loc == "":
+			store(mode)
+		item_loc = int(item_loc)
 		if item_loc == 1:
 			print ("You choose the first aid kit.")
 			print ("They are $75 for 5 HP")
 			print ("How many would you like to buy: ", end="")
-			buy = int(input())
-			money_ispos = money - buy * 10
+			try:
+				buy = int(input())
+				money_ispos = money - buy * 10
+			except:
+				print ("An error with your input occured!")
+				wait_clear("wait", n=2, mode1="clear")
+				store(mode)
+			if buy < 0:
+				print ("NO! How dare you try that!")
+				wait_clear("wait", n=2, mode1="clear")
+				store(mode)
 			if money > 0 and money_ispos > 0:
 				HP += buy*5
 				money -= buy*75
@@ -310,20 +371,26 @@ def battle(mode):
 		if power_use.lower() == "yes" or power_use.lower() == "y":
 			power = input("Which one: (nuke/laser)")
 			if power.lower() == "nuke":
-				print ("You used a nuke!")
-				money += enemy_troops*50
-				loot()
-				enemy_troops -= enemy_troops
-				wait_clear("wait", n=2, mode1="clear")
-				powerups[0] -= 1
-				menu(mode)
+				if powerups[0] > 0:
+					print ("You used a nuke!")
+					money += enemy_troops*50
+					loot()
+					enemy_troops -= enemy_troops
+					wait_clear("wait", n=2, mode1="clear")
+					powerups[0] -= 1
+					menu(mode)
+				else:
+					print ("You don't have a nuke")
 			elif power.lower() == "laser":
-				print ("You used a laser!")
-				money += enemy_troops*50
-				loot()
-				enemy_troops -= 5
-				wait_clear("wait", n=2)
-				powerups[1] -= 1
+				if powerups[1] > 0:
+					print ("You used a laser!")
+					money += enemy_troops*50
+					loot()
+					enemy_troops -= 5
+					wait_clear("wait", n=2)
+					powerups[1] -= 1
+				else:
+					print ("You don't have a laser")
 	for i in range(5, 0, -1):
 		print (i)
 		wait_clear("wait", n=0.75)
@@ -332,20 +399,22 @@ def battle(mode):
 		print ("Sir, they attacked before we had the chance.")
 		print ("We lost a HALF of our soldiers")
 		troops = troops // 2
-		print ("we now have: ", troops, " troops.")
-		wait_clear("wait", n=7, mode1="clear")
 		HP -= 3
-		transport()
+		print ("we now have: ", troops, " troops.")
+		print ("HP: ", HP)
+		wait_clear("wait", n=7, mode1="clear")
+		transport(mode)
 		menu(mode)
 	elif enemy_troops > troops and enemy_troops >= 1:
 		print ("Sir, they attacked before we had the chance.")
 		print ("We lost a member of our family today")
+		HP -= 1
 		troops -= 1
 		print ("we now have: ", troops, " troops.")
+		print ("HP: ", HP)
 		total_battles += 1
 		wait_clear("wait", n=7, mode1="clear")
-		HP -= 1
-		transport()
+		transport(mode)
 		menu(mode)
 	elif enemy_troops < troops and enemy_troops >= 1:
 		print ("We've done well today soldiers")
@@ -457,7 +526,7 @@ def info(mode):
 	
 	print ("Troops: ", troops)
 	if troops < 10:
-		transport()
+		transport(mode)
 	print ("Extra Troops: ", extra_troops)
 	print ("Money: ", money)
 	print ("Discount Cards: ", discount)
@@ -474,6 +543,8 @@ def info(mode):
 		tax()
 		menu(mode)
 	print ("HP: ",HP)
+	if HP <= 0:
+		retire(mode)
 	print ("\n")
 	
 	game_loss(mode)
@@ -514,12 +585,12 @@ def loot():
 		extra_troops += 2
 		print ("You've taken 2 hostage for your own troops")
 		wait_clear("wait", n=2)
-		transport()
+		transport(mode)
 	else:
 		print ("You didn't find any loot")
 		
 # Troop Transfer
-def transport():
+def transport(mode):
 	
 	global troops
 	global extra_troops
@@ -530,16 +601,17 @@ def transport():
 		wait_clear("wait", n=0.06)
 		print ("Transfering troops to front lines")
 		wait_clear("wait", n=0.06, mode1="clear")
-		menu(2)
+		menu(mode)
 	elif troops >= 11:
 		dif = buy_troops - 10
-		extra_troops = extra_troops + dif
-		troops = troops - dif
+		extra_troops += dif
+		troops -= dif
 		while troops >= 11:
-			troops = troops - 1
-			extra_troops = extra_troops + 1
+			troops -= 1
+			extra_troops += 1
 		print ("Transfering troops to barracks")
 		wait_clear("wait", n=2)
+		menu(mode)
 	if troops < 0:
 		troops = 0
 
@@ -570,12 +642,22 @@ def hospital(mode):
 	info(mode)
 	
 	print ("Hospital\n")
-	print ("Treatment: $225\15\n")
+	print ("Treatment: $225 for 15HP\n")
 	print ("How many treatment would you like to take: ", end="")
 	buy = input()
 	if buy == "":
 		menu(mode)
+	try:
+		buy = int(buy)
+	except:
+		print ("An error with your input occured!")
+		wait_clear("wait", n=2, mode1="clear")
+		menu(mode)
 	money_ispos = money - buy*225
+	if buy < 0:
+		print ("NO! How dare you try that!")
+		wait_clear("wait", n=2, mode1="clear")
+		store(mode)
 	if money > 0 and money_ispos > 0:
 		HP += buy*15
 		money -= buy*225
@@ -587,5 +669,88 @@ def hospital(mode):
 		print ("We don't support credit cards")
 		wait_clear("wait", n=2, mode1='clear')
 		menu(mode)
-		
+
+# Debug mode
+def debug(mode):
+	global money
+	global troops
+	global extra_troops
+	global discount
+	global token
+	global HP
+	global powerups
+	global battles_won
+	global total_battles
+	
+	wait_clear("clear")
+	
+	print ("Debug\n")
+	print ("1. Change money\n2. Change troops\n3. Change extra troops\n4. Change number of discount cards\n5. Change number of tokens\n6. Change current HP\n7. Change power-ups\n8. Change battles one\n9. Change total number of battle played\nEnter or 10: Main menu\n")
+	print ("Please make a selection: ", end="")
+	m_location = input()
+	if m_location == "":
+		menu(mode)
+	m_location = int(m_location)
+	if m_location == 1:
+		print ("Please enter the new money balance: ", end="")
+		add = int(input())
+		money = add
+		debug(mode)
+	elif m_location == 2:
+		print ("Please enter the new amount of troops: ", end="")
+		add = int(input())
+		troops = add
+		debug(mode)
+	elif m_location == 3:
+		print ("Please enter the new amounts of extra troops: ", end="")
+		add = int(input())
+		extra_troops = add
+		debug(mode)
+	elif m_location == 4:
+		print ("Please enter the new amount of discount cards: ", end="")
+		add = int(input())
+		discount = add
+		debug(mode)
+	elif m_location == 5:
+		print ("Please enter the new amount of tokens: ", end="")
+		add = int(input())
+		token = add
+		debug(mode)
+	elif m_location == 6:
+		print ("Please enter your new HP: ", end="")
+		add = int(input())
+		HP = add
+		debug(mode)
+	elif m_location == 7:
+		print ("Nuke or Laser", end="")
+		m_location = input()
+		if m_location.lower() == "nuke":
+			print ("Please enter a new amount of nukes: ", end="")
+			add = int(input())
+			powerups[0] = add
+			debug(mode)
+		if m_location.lower() == "laser":
+			print ("Please enter a new amount of lasers: ", end="")
+			add = int(input())
+			powerups[1] = add
+			debug(mode)
+		else:
+			debug(mode)
+	elif m_location == 8:
+		print ("Please enter the battles that you want to win: ", end="")
+		add = int(input())
+		battles_won = add
+		debug(mode)
+	elif m_location == 9:
+		print ("Please enter how many total battles you want: ", end="")
+		add = int(input())
+		total_battles = add
+		debug(mode)
+	elif m_location ==10:
+		menu(mode)
+	else:
+		print ("Error")
+		wait_clear("wait", n=2, mode1="clear")
+		debug(mode)		
+
 intro() 
