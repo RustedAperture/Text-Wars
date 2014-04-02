@@ -7,7 +7,11 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 Requirement: Python3
 
 ##Change Log
-####Version 1.3.0 (latest)
+####Version 1.4.0 (latest)
+1. Added save/load game functions
+2. version 1.3.5 was minor fix with not much details so no changelog for that one.
+
+####Version 1.3.0 
 1. Added a try-except to any integer input
 2. Added debug menu accessible by using wwssadadba on main menu
 3. Users can no longer by negative objects
