@@ -3,14 +3,15 @@ Author: Cameron Varley
 Date: March 21, 2014
 Filename: Game.py
 Description: Text based war game using python
-Version: 1.3.0
-versions since relese: 7
+Version: 1.4.0
+versions since relese: 9
 '''
 
 import os
 import sys
 import time
 import random
+import pickle
 
 money = 500
 troops = 1
@@ -23,8 +24,37 @@ discount = 0
 token = 0
 HP = 50
 powerups = [0, 0] # Nuke($1250), Laser($650)
-version = "1.3.0"
+version = "1.4.0"
+hasloaded = 0
 
+def savegame(filename):
+	global money
+	global troops
+	global extra_troops
+	global discount
+	global token
+	global HP
+	global powerups
+	global battles_won
+	global total_battles
+	
+	with open(filename, 'wb') as f:
+		pickle.dump([money, troops, extra_troops, discount, token, HP, powerups, battles_won, total_battles], f)
+
+def loadgame(filename):
+	global money
+	global troops
+	global extra_troops
+	global discount
+	global token
+	global HP
+	global powerups
+	global battles_won
+	global total_battles
+	
+	with open(filename, 'rb') as f:
+		money, troops, extra_troops, discount, token, HP, powerups, battles_won, total_battles = pickle.load(f)
+    
 # Custom Game Functions
 def wait_clear(mode, n='', mode1=''):
 	if mode == "wait":
@@ -37,13 +67,14 @@ def wait_clear(mode, n='', mode1=''):
 
 # Changelog
 def changelog():
-	print ("Changes since 1.2.5\n")
-	print ("1. Added debug screen")
+	print ("Changes since 1.3.5\n")
+	print ("1. Added save/load game function to game.")
 	print ("For a full changleog since the start goto: https://github.com/Camvar97/Text-Wars")
 	print ("To provide user feedback email: Cam.avarley@gmail.com with the subject TextWars\n")
 		
 # Intro Sequence
 def intro():
+	wait_clear("wait", n=1, mode1="clear")
 	print ("Text Wars\nversion:", version, "\n\n")
 	changelog()
 	print ("Welcome to the text wars arena")
@@ -69,6 +100,8 @@ def play_b4():
 	global total_battles
 	global discount
 	global token
+	global powerups
+	global HP
 	
 	print ("Do you know how to play? (yes/no): ", end="")
 	playb4 = input()
@@ -82,7 +115,9 @@ def play_b4():
 		battles_won = 0
 		total_battles = 0
 		discount = 0
-		token = 0	
+		token = 0
+		powerups = [0, 0]
+		HP = 50
 		wait_clear("clear")
 		menu(2)
 	elif playb4.lower() == "no" or playb4.lower() == "n":
@@ -101,26 +136,43 @@ def training():
 
 # Menu Sequence
 def menu(mode):
+	global hasloaded
+	
 	transport(mode)
 	if mode == 1:
 		info(mode)
 		print ("Welcome to the training menu.\nYou will always revert to this menu anytime you finish a task!\n")
 		print ("Training Menu")
 		print ("---------------------------------")
-		print ("1. Store (You can purchase stuff here)\n2. Battle (Fight a random enemy)\n3. Scout (Search the area. Fight or Loot)\n4. Gamble (Use your tokens here!)\n5. Hospital (15 HP for $225)\n6. Retire (This is where you can end your game)")
+		print ("1. Store (You can purchase stuff here)\n2. Battle (Fight a random enemy)\n3. Scout (Search the area. Fight or Loot)\n4. Gamble (Use your tokens here!)\n5. Hospital (15 HP for $225)\n6. Retire (This is where you can end your game)\n7. Save/Load game")
 	elif mode == 2:
 		info(mode)
 		print ("Main Menu")
 		print ("---------------------------------")
-		print ("1. Store\n2. Battle\n3. Scout\n4. Gamble\n5. Hospital\n6. Retire")
+		print ("1. Store\n2. Battle\n3. Scout\n4. Gamble\n5. Hospital\n6. Retire\n7. Save/Load game")
 	print ("Choose an item: ", end="")
 	m_location = input()
 	if m_location == '1':
 		wait_clear("clear")
 		store(mode)
 	elif m_location == '2':
-		wait_clear("clear")
-		battle(mode)
+		if troops == 0:
+			print ("Are you trying to kill yourself? (Yes/No): ", end="")
+			yn = input()
+			if yn.lower() == "yes":
+				wait_clear("clear")
+				battle(mode)
+			elif yn.lower() == "no":
+				print ("Good we thought you were insane!")
+				wait_clear("wait", n=2, mode1="clear")
+				menu(mode)
+			else:
+				print ("Invalid response")
+				wait_clear("wait", n=2, mode1="clear")
+				menu(mode)
+		else:
+			wait_clear("clear")
+			battle(mode)
 	elif m_location == '3':
 		wait_clear("clear")
 		scout(mode)
@@ -133,6 +185,28 @@ def menu(mode):
 	elif m_location == '6':
 		wait_clear("clear")
 		retire(mode)
+	elif m_location == '7':
+		print ("Would you like to save your game or load a previous game?")
+		sl = str(input("(save/load): "))
+		if sl.lower() == "save":
+			filename = str(input("Filename: "))
+			savegame(filename)
+			menu(mode)
+		elif sl.lower() == "load":
+			if hasloaded == 0:
+				try:
+					filename = str(input("Filename: "))
+					loadgame(filename)
+					hasloaded = 1
+					menu(mode)
+				except:
+					print ("Invalid filename")
+					wait_clear("wait", n=2, mode1="clear")
+					menu(mode)
+			elif hasloaded == 1:
+				print ("You've already loaded a game")
+				wait_clear("wait", n=2, mode1="clear")
+				menu(mode)
 	elif m_location == 'wwssadadba':
 		wait_clear("clear")
 		debug(mode)
@@ -143,7 +217,6 @@ def menu(mode):
 		
 # Store
 def store(mode):
-	
 	global troops
 	global money
 	global discount
@@ -176,7 +249,7 @@ def store(mode):
 			buy = int(input())
 			buy_troops = buy
 		except:
-			print ("Do the math yourself!")
+			print ("An error with your input occured!")
 			wait_clear("wait", n=2, mode1="clear")
 			store(mode)
 		if buy_troops < 0:
@@ -342,7 +415,6 @@ def store(mode):
 
 # Battle
 def battle(mode):
-	
 	global troops
 	global total_battles
 	global battles_won
@@ -395,10 +467,25 @@ def battle(mode):
 		print (i)
 		wait_clear("wait", n=0.75)
 	print ("They have: ", enemy_troops, " troops")
-	if enemy_troops == troops * 2:
+	if troops == 0:
+		print ("Are you ok? (Yes/No): ", end="")
+		ask = input()
+		if ask.lower() == "yes":
+			print ("OK good!")
+			print ("Just to let you know you lost 10HP")
+			HP -= 10
+			wait_clear("wait", n=3, mode1="clear")
+			menu(mode)
+		if ask.lower() == "no":
+			print ("Well thats what you get!")
+			print ("Just to let you know you lost 10HP")
+			HP -= 10
+			wait_clear("wait", n=3, mode1="clear")
+			menu(mode)
+	elif enemy_troops == troops * 2:
 		print ("Sir, they attacked before we had the chance.")
 		print ("We lost a HALF of our soldiers")
-		troops = troops // 2
+		troops //= 2
 		HP -= 3
 		print ("we now have: ", troops, " troops.")
 		print ("HP: ", HP)
@@ -514,44 +601,58 @@ def retire(mode):
 		print ("Thanks For playing")
 		wait_clear("wait", n=2)
 		sys.exit()
+
+# Checker
+def check(mode):
+	global token
+	global battles_won
+	global money
+	
+	rounded = round(money,2)
+	money = rounded
+	
+	if troops < 10:
+		transport(mode)
+		
+	if battles_won % 5 == 0 and battles_won > 0:
+		token += 1
+		print ("Your $200 paycheck has arrived")
+		money += 200
+		wait_clear("wait", n=5)
+		battles_won = 0
+		tax()
+		menu(mode)
+		
+	if total_battles % 5 == 0 and total_battles > 0:
+		tax()
+		menu(mode)
+		
+	if HP <= 0:
+		retire(mode)
 	
 # Current stats
 def info(mode):
-	
 	global token
 	global battles_won
 	global money
 	
 	wait_clear("clear")
 	
-	print ("Troops: ", troops)
-	if troops < 10:
-		transport(mode)
-	print ("Extra Troops: ", extra_troops)
-	print ("Money: ", money)
-	print ("Discount Cards: ", discount)
-	print ("Casino Tokens: ", token)
-	if battles_won % 5 == 0 and battles_won > 0:
-		token = token + 1
-		print ("Your $200 paycheck has arrived")
-		money = money + 200
-		wait_clear("wait", n=5)
-		battles_won = 0
-		tax()
-		menu(mode)
-	if total_battles % 5 == 0 and total_battles > 0:
-		tax()
-		menu(mode)
-	print ("HP: ",HP)
-	if HP <= 0:
-		retire(mode)
-	print ("\n")
+	check(mode)
 	
-	game_loss(mode)
+	print ("-----------------------------------------")
+	print ("| Troops:         ", str(troops).rjust(20), "|")
+	print ("| Extra Troops:   ", str(extra_troops).rjust(20), "|")
+	print ("| Money:          ", str(money).rjust(20), "|")
+	print ("| Discount Cards: ", str(discount).rjust(20), "|")
+	print ("| Casino Tokens:  ", str(token).rjust(20), "|")
+	print ("| HP:             ", str(HP).rjust(20), "|")
+	print ("| Nukes:          ", str(powerups[0]).rjust(20), "|")
+	print ("| Lasers:         ", str(powerups[1]).rjust(20), "|")
+	print ("-----------------------------------------\n")
 
 # Enemy Generation
 def enemy():
-	
 	global enemy_troops
 	
 	enemy_troops = random.randint(1,11)
@@ -596,8 +697,8 @@ def transport(mode):
 	global extra_troops
 	
 	if troops < 10 and extra_troops > 0:
-		troops = troops + 1
-		extra_troops = extra_troops - 1
+		troops += 1
+		extra_troops -= 1
 		wait_clear("wait", n=0.06)
 		print ("Transfering troops to front lines")
 		wait_clear("wait", n=0.06, mode1="clear")
@@ -624,15 +725,10 @@ def tax():
 	wait_clear ("wait", n=2)
 	tax = 13 * money / 100.0
 	if money > 0:
-		money = money - tax
+		money -= tax
 	else:
-		money = money + tax
+		money += tax
 	total_battles = 0
-
-# Game Over
-def game_loss(mode):
-	if HP == 0:
-		retire(mode)		
 
 # Hospital
 def hospital(mode):
@@ -684,8 +780,10 @@ def debug(mode):
 	
 	wait_clear("clear")
 	
+	info(mode)
+	
 	print ("Debug\n")
-	print ("1. Change money\n2. Change troops\n3. Change extra troops\n4. Change number of discount cards\n5. Change number of tokens\n6. Change current HP\n7. Change power-ups\n8. Change battles one\n9. Change total number of battle played\nEnter or 10: Main menu\n")
+	print ("1. Change money\n2. Change troops\n3. Change extra troops\n4. Change number of discount cards\n5. Change number of tokens\n6. Change current HP\n7. Change power-ups\n8. Change battles one\n9. Change total number of battle played\n10. Save Game\n11. Load Game\nEnter or 12: Main menu\n")
 	print ("Please make a selection: ", end="")
 	m_location = input()
 	if m_location == "":
@@ -693,64 +791,105 @@ def debug(mode):
 	m_location = int(m_location)
 	if m_location == 1:
 		print ("Please enter the new money balance: ", end="")
-		add = int(input())
+		try:
+			add = float(input())
+		except:
+			debug(mode)
 		money = add
 		debug(mode)
 	elif m_location == 2:
 		print ("Please enter the new amount of troops: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		troops = add
 		debug(mode)
 	elif m_location == 3:
 		print ("Please enter the new amounts of extra troops: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		extra_troops = add
 		debug(mode)
 	elif m_location == 4:
 		print ("Please enter the new amount of discount cards: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		discount = add
 		debug(mode)
 	elif m_location == 5:
 		print ("Please enter the new amount of tokens: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		token = add
 		debug(mode)
 	elif m_location == 6:
 		print ("Please enter your new HP: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		HP = add
 		debug(mode)
 	elif m_location == 7:
-		print ("Nuke or Laser", end="")
+		print ("Nuke or Laser: ", end="")
 		m_location = input()
 		if m_location.lower() == "nuke":
 			print ("Please enter a new amount of nukes: ", end="")
-			add = int(input())
+			try:
+				add = int(input())
+			except:
+				debug(mode)
 			powerups[0] = add
 			debug(mode)
 		if m_location.lower() == "laser":
 			print ("Please enter a new amount of lasers: ", end="")
-			add = int(input())
+			try:
+				add = int(input())
+			except:
+				debug(mode)
 			powerups[1] = add
 			debug(mode)
 		else:
 			debug(mode)
 	elif m_location == 8:
 		print ("Please enter the battles that you want to win: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		battles_won = add
 		debug(mode)
 	elif m_location == 9:
 		print ("Please enter how many total battles you want: ", end="")
-		add = int(input())
+		try:
+			add = int(input())
+		except:
+			debug(mode)
 		total_battles = add
 		debug(mode)
-	elif m_location ==10:
+	elif m_location == 10:
+		savegame('debug')
+		debug(mode)
+	elif m_location == 11:
+		loadgame('debug')
+		debug(mode)
+	elif m_location == 12:
 		menu(mode)
 	else:
 		print ("Error")
 		wait_clear("wait", n=2, mode1="clear")
 		debug(mode)		
 
-intro() 
+print ("Starting Game")
+for i in range(50+1):
+	time.sleep(0.1)
+	print ("\r", (chr(0x2588)*i)+('-'*(50-i)), end="")
+print ("\n")
+intro()
