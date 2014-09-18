@@ -23,8 +23,9 @@ total_battles = 0
 discount = 0
 token = 0
 HP = 50
+points = 0
 powerups = [0, 0] # Nuke($1250), Laser($650)
-version = "1.4.0"
+version = "1.4.5"
 hasloaded = 0
 
 def savegame(filename):
@@ -62,13 +63,12 @@ def wait_clear(mode, n='', mode1=''):
 		if mode1 == "clear":
 			wait_clear("clear")
 	elif mode == "clear":	
-		os.system('cls')
-		os.system('clear')
+		os.system('cls' if os.name == 'nt' else 'clear')
 
 # Changelog
 def changelog():
-	print ("Changes since 1.3.5\n")
-	print ("1. Added save/load game function to game.")
+	print ("Changes since 1.4.0\n")
+	print ("1. Added base structure for points.")
 	print ("For a full changleog since the start goto: https://github.com/Camvar97/Text-Wars")
 	print ("To provide user feedback email: Cam.avarley@gmail.com with the subject TextWars\n")
 		
@@ -118,6 +118,7 @@ def play_b4():
 		token = 0
 		powerups = [0, 0]
 		HP = 50
+		points = 0
 		wait_clear("clear")
 		menu(2)
 	elif playb4.lower() == "no" or playb4.lower() == "n":
@@ -464,9 +465,9 @@ def battle(mode):
 				else:
 					print ("You don't have a laser")
 	for i in range(5, 0, -1):
-		print (i)
+		print ("\r", i, end="")
 		wait_clear("wait", n=0.75)
-	print ("They have: ", enemy_troops, " troops")
+	print ("\nThey have: ", enemy_troops, " troops")
 	if troops == 0:
 		print ("Are you ok? (Yes/No): ", end="")
 		ask = input()
@@ -649,6 +650,7 @@ def info(mode):
 	print ("| HP:             ", str(HP).rjust(20), "|")
 	print ("| Nukes:          ", str(powerups[0]).rjust(20), "|")
 	print ("| Lasers:         ", str(powerups[1]).rjust(20), "|")
+	print ("| Points:         ", str(points).rjust(20), "|")
 	print ("-----------------------------------------\n")
 
 # Enemy Generation
@@ -668,6 +670,7 @@ def loot():
 	global troops
 	global discount
 	global extra_troops
+	global points
 	
 	loot = random.randint(1, 10)
 	if loot == 1:
@@ -890,6 +893,6 @@ def debug(mode):
 print ("Starting Game")
 for i in range(50+1):
 	time.sleep(0.1)
-	print ("\r", (chr(0x2588)*i)+('-'*(50-i)), end="")
+	print ("\r", ("*"*i)+('-'*(50-i)), end="")
 print ("\n")
 intro()

@@ -7,7 +7,10 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 Requirement: Python3
 
 ##Change Log
-####Version 1.4.0 (latest)
+####Version 1.4.5 (latest)
+1. Added base structure for points system
+
+####Version 1.4.0
 1. Added save/load game functions
 2. version 1.3.5 was minor fix with not much details so no changelog for that one.
 
