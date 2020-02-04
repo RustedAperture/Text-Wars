@@ -1,4 +1,4 @@
-#Text Wars
+# Text Wars
 
 Created by: Cameron Varley
 
@@ -6,37 +6,46 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 
 Requirement: Python3
 
-##Change Log
-####Version 1.4.5 (latest)
+## Change Log
+#### Version 2.0.0 (latest)
+1. Complete Overhaul of script
+   1. this includes the menu
+   2. validation of inputs
+   3. sanitization
+   4. variable
+   5. almost 400 lines have been removed
+2. more to come in 2.0.5 ( the hints update )
+
+#### Version 1.4.5 
 1. Added base structure for points system
 
-####Version 1.4.0
+#### Version 1.4.0
 1. Added save/load game functions
 2. version 1.3.5 was minor fix with not much details so no changelog for that one.
 
-####Version 1.3.0 
+#### Version 1.3.0 
 1. Added a try-except to any integer input
 2. Added debug menu accessible by using wwssadadba on main menu
 3. Users can no longer by negative objects
 
-####Version 1.2.5
+#### Version 1.2.5
 1. Fixed Hospital crash
 2. returned health to 50 at start
 
-####Version 1.2.0
+#### Version 1.2.0
 1. Added HP to detemin the end of game
 2. Added hospital. Hospital will give you 15HP for $225
 3. Added item store
 4. New item: First aid
 
-####Version 1.1.5
+#### Version 1.1.5
 1. Offical forced retirement when money is less than -500 and you have zero troops, tokens and discounts
 
-####Version 1.1.0
+#### Version 1.1.0
 1. Added Powerup store
 2. Introduced Powerups (Nukes and Lasers)
 
-####Version 1.0.5
+#### Version 1.0.5
 1. Added gamble menu and option to purchase tokens in store
 2. Reworked Troops (codeside)
 3. Change menu setup
