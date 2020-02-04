@@ -3,7 +3,7 @@ Author: Cameron Varley
 Date: 2020-02-03 11:12:31
 Filename: textwars.py
 Description: Text based war game using python, rewrite of my original textwars.
-version: 2.0.0
+version: 2.0.1
 '''
 
 import time
@@ -239,70 +239,56 @@ def store():
     prompt = validate('Enter a menu option: (1-5) ',
                       int, 1, 5, allowEmpty=True)
 
+    wait_clear(clear=True)
+    info()
     if prompt == 1:
-        wait_clear(clear=True)
         cost = int(100)
-        info()
         print('Troops: ${}/millitant'.format(cost))
         prompt = validate('How many would you like to buy: ',
                           int, 0, cost=cost, allowEmpty=True)
         if prompt == 'exit':
             store()
         userValues['troops'][0] += prompt
-        store()
     elif prompt == 2:
-        wait_clear(clear=True)
-        info()
-        options = ['nuke', 'laser']
-        cost = [1250, 650]
-        for i in range(len(options)):
-            print('{}. {} - ${}'.format(i+1, options[i], cost[i]))
+        items = {'nuke': 1250, 'laser': 650}
+        for i in range(len(items)):
+            print('{}. {} - ${}'.format(i+1,
+                                        list(items.keys())[i], list(items.values())[i-1]))
         prompt = validate_bool(
             'Which would you like to buy: ', ['1', '2'])
         if prompt == '0':
             store()
-        if prompt:
-            prompt = validate('How many nukes would you like to buy: ',
-                              int, 0, cost=cost[0], allowEmpty=True)
-            if prompt == 'exit':
-                store()
-            userValues['powerups'][0] += prompt
-        else:
-            prompt = validate('How many lasers would you like to buy: ',
-                              int, 0, cost=cost[1], allowEmpty=True)
-            if prompt == 'exit':
-                store()
-            userValues['powerups'][1] += prompt
-        store()
+        powerup = 'nuke' if prompt else 'laser'
+        cost = list(items.values())[0] if prompt else list(items.values())[1]
+        amount = validate('How many {} would you like to buy: '.format(powerup),
+                          int, 0, cost=cost, allowEmpty=True)
+        if amount == 'exit':
+            store()
+        userValues['powerups'][int(prompt)-1] += amount
     elif prompt == 3:
-        wait_clear(clear=True)
         cost = int(10)
-        info()
         print('tokens: ${}'.format(cost))
         prompt = validate('How many would you like to buy: ',
                           int, 0, cost=cost, allowEmpty=True)
         if prompt == 'exit':
             store()
         userValues['token'] += prompt
-        store()
     elif prompt == 4:
-        wait_clear(clear=True)
-        options = ['First Aid Kit']
-        costs = [75]
-        info()
-        for i in range(len(options)):
-            print('{}. {} - ${}'.format(i+1, options[i], costs[i]))
+        items = {'First Aid Kit': 75}
+        for i in range(len(items)):
+            print('{}. {} - ${}'.format(i+1,
+                                        list(items.keys())[i], list(items.values())[i-1]))
         prompt = validate(
-            'What would you like to buy: (0-{}) '.format(len(options)), int, 0, len(options))
+            'What would you like to buy: (0-{}) '.format(len(items)), int, 0, len(items))
         amount = validate('How many would you like to buy: ',
-                          int, 0, cost=costs[prompt-1], allowEmpty=True)
+                          int, 0, cost=list(items.values())[prompt-1], allowEmpty=True)
         if prompt == 'exit':
             store()
         if prompt == 1:
             userValues['hp'] += 5*amount
-        store()
     else:
         menu()
+    store()
 
 
 def train():
