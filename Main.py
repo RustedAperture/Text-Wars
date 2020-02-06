@@ -1,9 +1,9 @@
 ''' File Info
 Author: Cameron Varley
-Date: 2020-02-03 11:12:31
+Date: 2020-02-06 13:51:58
 Filename: textwars.py
 Description: Text based war game using python, rewrite of my original textwars.
-version: 2.0.1
+version: 2.0.2
 '''
 
 import time
@@ -14,7 +14,7 @@ import random
 import sys
 
 # Game Variables
-version = '2.0.0'
+version = '2.0.2'
 userValues = {'username': 'username',
               'playedBefore': False,
               'money': 500,
@@ -25,28 +25,36 @@ userValues = {'username': 'username',
               'hp': 50,
               'points': 0,
               'powerups': [0, 0]}
-mode = False
+# Hints bool will be used to toggle hints on or off when asked if played before
+hints = False
 
 
+# Input validation script, can check type, input range, and funds verification
 def validate(msg, type_, min=None, max=None, cost=None, allowEmpty=False):
     while True:
         userInput = input(msg)
         try:
+            # first check if user didnt enter anything, if so then return an exit notice
             if allowEmpty:
                 if not userInput:
                     return 'exit'
+            # try and verify the input value against the type_ provided
             userInput = type_(userInput)
+            # Check if the min and max are set
             if max != None and min != None:
+                # when user enters a value between allowed range return else error
                 if userInput <= max and userInput >= min:
                     return type_(userInput)
                 else:
                     raise ValueError()
+            # if only max is set ensure proper entry (same for min)
             elif max != None:
                 if userInput > max:
                     raise ValueError()
             elif min != None:
                 if userInput < min:
                     raise ValueError()
+            # if cost is set then we will check if the user has enough funds to do it before continuing
             if cost != None:
                 if not validate_cost(int(cost*userInput)):
                     continue
@@ -54,9 +62,12 @@ def validate(msg, type_, min=None, max=None, cost=None, allowEmpty=False):
             print('Your input was not valid')
             continue
         else:
+            # Return value if all else fails
             return type_(userInput)
 
 
+# a function that is designed to return a True or False
+# takes a msg, [true, false]
 def validate_bool(msg, options, exit='0'):
     while True:
         userInput = input('{}({}/{}) '.format(msg, options[0], options[1]))
@@ -68,6 +79,7 @@ def validate_bool(msg, options, exit='0'):
             print('Please enter a valid option')
 
 
+# a simple script that will just check if the user has enough funds for the required item
 def validate_cost(cost):
     global userValues
     if cost > userValues['money']:
@@ -78,6 +90,7 @@ def validate_cost(cost):
         return True
 
 
+# this will pickle the uservalues into a savefile for loading later
 def save_load(func, username):
 
     global userValues
@@ -91,6 +104,9 @@ def save_load(func, username):
             pickle.dump(userValues, f)
 
 
+# allows to clear or wait based on what is needed
+# future option is to just ask user to press enter to continue or wait the aloted time...
+# this may require to do a interupt with multithreading the python script
 def wait_clear(wait=False, clear=False, length=0):
     if wait:
         time.sleep(length)
@@ -98,22 +114,27 @@ def wait_clear(wait=False, clear=False, length=0):
         os.system('cls' if os.name == 'nt' else 'clear')
 
 
+# Main script to begin the game
 def main():
 
     global userValues
+    global hints
 
     wait_clear(clear=True)
     print('TextWars V{}'.format(version))
     print()
     print('Lets get started with a few questions!')
     userValues['username'] = validate('What is your name? ', str)
+    # if the user enters no here we will enable hints
     userValues['playedBefore'] = validate_bool(
         'Have you played before? ', ['y', 'n'])
+    hints = True if not userValues['playedBefore'] else False
     if userValues['playedBefore']:
         try:
             # Check if file can be loaded
             save_load(True, userValues['username'])
         except:
+            # create save if the users save couldnt be found
             print('Old save not found')
             userValues['playedBefore'] = False
     print('Saving')
@@ -121,6 +142,10 @@ def main():
     menu()
 
 
+# menu funtion that will display the main menu,
+# eventually i want to make this a function that will display
+# any menu that is passed to it but will be dificult for a
+# multimenu system
 def menu():
     wait_clear(clear=True)
     info()
@@ -149,12 +174,19 @@ def menu():
                 menu()
             if action == 8:
                 debug()
+            # convert values to a list which index alues can be passed to,
+            # this allows a function to be run from the dictionary based
+            # on int input
+            # list(dict.values())[index]()
             list(menuItems.values())[action-1]()
             break
         except:
             print('You should never see this!')
 
 
+# function that makes sure the troops are in the right place
+# we ensure that there is always 10 troops available when
+# there is some in reserve
 def transport():
 
     global userValues
@@ -179,6 +211,7 @@ def transport():
         userValues['troops'][1] = 0
 
 
+# print all the user statistics
 def info():
     check()
     transport()
@@ -195,6 +228,7 @@ def info():
     print()
 
 
+# bonus if you have reached a certain number of battle
 def check():
 
     global userValues
@@ -212,6 +246,7 @@ def check():
         retire()
 
 
+# we will take mney because taxes
 def tax():
 
     global userValues
@@ -224,9 +259,20 @@ def tax():
         userValues['money'] += tax
 
 
+# this is the store funstion, I want to eventually make this significantly smaller
+# the universal menu function will be best for this but i will need to find a way to
+# tell items apart
 def store():
 
     global userValues
+
+    # List of items available in the store
+    # These will eventually be catagorized and editable from the debug
+    items = {'troops': 100,
+             'nuke': 1250,
+             'laser': 650,
+             'tokens': 10,
+             'first aid kits': 75}
 
     wait_clear(clear=True)
 
@@ -236,52 +282,49 @@ def store():
     for i in range(len(storeMenu)):
         print('{}. {}'.format(i+1, storeMenu[i]))
 
+    # allowing empty here will enable the user to just go back to the main menu
     prompt = validate('Enter a menu option: (1-5) ',
                       int, 1, 5, allowEmpty=True)
 
     wait_clear(clear=True)
     info()
     if prompt == 1:
-        cost = int(100)
-        print('Troops: ${}/millitant'.format(cost))
+        print('Troops: ${}/millitant'.format(items['troops']))
         prompt = validate('How many would you like to buy: ',
-                          int, 0, cost=cost, allowEmpty=True)
+                          int, 0, cost=items['troops'], allowEmpty=True)
         if prompt == 'exit':
             store()
         userValues['troops'][0] += prompt
     elif prompt == 2:
-        items = {'nuke': 1250, 'laser': 650}
-        for i in range(len(items)):
+        for i in range(0, 2):
             print('{}. {} - ${}'.format(i+1,
-                                        list(items.keys())[i], list(items.values())[i-1]))
+                                        list(items.keys())[i+1], list(items.values())[i+1]))
         prompt = validate_bool(
             'Which would you like to buy: ', ['1', '2'])
         if prompt == '0':
             store()
         powerup = 'nuke' if prompt else 'laser'
-        cost = list(items.values())[0] if prompt else list(items.values())[1]
+        cost = list(items.values())[1] if prompt else list(items.values())[2]
         amount = validate('How many {} would you like to buy: '.format(powerup),
                           int, 0, cost=cost, allowEmpty=True)
         if amount == 'exit':
             store()
         userValues['powerups'][int(prompt)-1] += amount
     elif prompt == 3:
-        cost = int(10)
-        print('tokens: ${}'.format(cost))
+        print('tokens: ${}'.format(items['tokens']))
         prompt = validate('How many would you like to buy: ',
-                          int, 0, cost=cost, allowEmpty=True)
+                          int, 0, cost=items['tokens'], allowEmpty=True)
         if prompt == 'exit':
             store()
         userValues['token'] += prompt
     elif prompt == 4:
-        items = {'First Aid Kit': 75}
-        for i in range(len(items)):
-            print('{}. {} - ${}'.format(i+1,
-                                        list(items.keys())[i], list(items.values())[i-1]))
+        for i in range(4, len(items)):
+            print('{}. {} - ${}'.format(i-3,
+                                        list(items.keys())[i], list(items.values())[i]))
         prompt = validate(
-            'What would you like to buy: (0-{}) '.format(len(items)), int, 0, len(items))
+            'What would you like to buy: (1-{}) '.format(len(items)-4), int, 0, len(items))
         amount = validate('How many would you like to buy: ',
-                          int, 0, cost=list(items.values())[prompt-1], allowEmpty=True)
+                          int, 0, cost=list(items.values())[prompt+3], allowEmpty=True)
         if prompt == 'exit':
             store()
         if prompt == 1:
@@ -293,12 +336,13 @@ def store():
 
 def train():
 
-    global mode
+    global train
 
     print("Welcome to training mode, we will give you hints along the way")
-    mode = True
+    train = True
 
 
+# allows me to change any value from in the game
 def debug():
 
     global userValues
@@ -519,6 +563,7 @@ def hospital():
     menu()
 
 
+# generates a random number of enemies to fight
 def enemy_Gen():
     maxTroops = userValues['troops'][0] * 1.35
     minTroops = userValues['troops'][0] - (userValues['troops'][0] * 0.35)

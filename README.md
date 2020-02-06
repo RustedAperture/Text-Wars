@@ -7,14 +7,20 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 Requirement: Python3
 
 ## Change Log
-#### Version 2.0.0 (latest)
+#### Version 2.0.2 (latest)
+this update is just a few simple changes
+1. comments were added for confusing/difficult parts of the script
+2. store items are now stored in a single location
+3. added some comments regarding what future plans might entail
+   
+#### Version 2.0.0
 1. Complete Overhaul of script
    1. this includes the menu
    2. validation of inputs
    3. sanitization
    4. variable
    5. almost 400 lines have been removed
-2. more to come in 2.0.5 ( the hints update )
+2. more to come in 2.1.0 ( the hints update )
 
 #### Version 1.4.5 
 1. Added base structure for points system
