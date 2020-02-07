@@ -1,9 +1,9 @@
 ''' File Info
 Author: Cameron Varley
-Date: 2020-02-06 13:51:58
+Date: 2020-02-06 21:41:54
 Filename: textwars.py
 Description: Text based war game using python, rewrite of my original textwars.
-version: 2.0.2
+version: 2.1.0
 '''
 
 import time
@@ -12,6 +12,8 @@ import pickle
 import math
 import random
 import sys
+import pymenu as pm
+import pystore as ps
 
 # Game Variables
 version = '2.0.2'
@@ -27,6 +29,28 @@ userValues = {'username': 'username',
               'powerups': [0, 0]}
 # Hints bool will be used to toggle hints on or off when asked if played before
 hints = False
+
+# initialize the menus
+storeItems = ps.store('store')
+
+mainMenu = pm.menu('Main')
+storeMenu = mainMenu.newSubMenu('Store', 'mainMenu')
+debugMenu = mainMenu.newSubMenu('Debug', 'mainMenu')
+
+# Create Menu Items
+mainMenu.populate([storeMenu, 'battle', 'scout', 'gamble',
+                   'hospital', 'retire', 'save', debugMenu])
+
+for i in userValues:
+    debugMenu.newItems(i)
+
+
+def initialize():
+    global storeItems
+    with open('store.config', 'rb') as store_config:
+        storeItems = pickle.load(store_config)
+        for i in storeItems.categories:
+            storeMenu.newItems(i)
 
 
 # Input validation script, can check type, input range, and funds verification
@@ -147,41 +171,33 @@ def main():
 # any menu that is passed to it but will be dificult for a
 # multimenu system
 def menu():
-    wait_clear(clear=True)
-    info()
-    menuItems = {'store': store,
-                 'battle': battle,
-                 'scout': scout,
-                 'gamble': gamble,
-                 'hospital': hospital,
-                 'retire': retire,
-                 'save': save_load}
-    print('Menu')
-    print('----------------------')
-    counter = 1
-    for key in menuItems:
-        print('{}. {}'.format(counter, key.title()))
-        counter += 1
-
+    toDisplay = mainMenu
     while True:
-        action = validate('Enter a menu option: (1-7) ',
-                          int, 1, 8, allowEmpty=True)
-        try:
-            if action == 'exit':
-                menu()
-            if action == 7:
-                save_load(False, userValues['username'])
-                menu()
-            if action == 8:
-                debug()
-            # convert values to a list which index alues can be passed to,
-            # this allows a function to be run from the dictionary based
-            # on int input
-            # list(dict.values())[index]()
-            list(menuItems.values())[action-1]()
-            break
-        except:
-            print('You should never see this!')
+        wait_clear(clear=True)
+        info()
+        toDisplay.display()
+        prompt = validate('Enter an option: ', int, 1,
+                          len(toDisplay.items), allowEmpty=True)
+        if prompt == 'exit' and toDisplay.parent != None:
+            toDisplay = globals()[toDisplay.parent]
+        elif prompt == 'exit':
+            toDisplay = toDisplay
+        else:
+            value = list(toDisplay.items.values())[int(prompt)-1]
+            key = list(toDisplay.items.keys())[int(prompt)-1]
+            if isinstance(key, pm.menu):
+                location = '{}Menu'.format(
+                    value)
+                toDisplay = globals()[location]
+            elif toDisplay.name.lower() == 'store':
+                purchase(value)
+            elif toDisplay.name.lower() == 'debug':
+                debug(value)
+            else:
+                try:
+                    globals()[value]()
+                except:
+                    pass
 
 
 # function that makes sure the troops are in the right place
@@ -213,9 +229,10 @@ def transport():
 
 # print all the user statistics
 def info():
+    wait_clear(clear=True)
     check()
     transport()
-    print("----------------------")
+    print(str('-')*20)
     print("Troops/Extra:   {}/{}".format(userValues['troops'][0],
                                          userValues['troops'][1]))
     print("Money:          {}".format(userValues['money']))
@@ -224,7 +241,7 @@ def info():
     print("Nukes/Lasers:   {}/{}".format(userValues['powerups'][0],
                                          userValues['powerups'][1]))
     print("Points:         {}".format(userValues['points']))
-    print("----------------------")
+    print(str('-')*20)
     print()
 
 
@@ -262,76 +279,26 @@ def tax():
 # this is the store funstion, I want to eventually make this significantly smaller
 # the universal menu function will be best for this but i will need to find a way to
 # tell items apart
-def store():
+def purchase(value):
 
     global userValues
 
-    # List of items available in the store
-    # These will eventually be catagorized and editable from the debug
-    items = {'troops': 100,
-             'nuke': 1250,
-             'laser': 650,
-             'tokens': 10,
-             'first aid kits': 75}
-
     wait_clear(clear=True)
-
-    print('Welcome to the store')
-    storeMenu = ('Buy Troops', 'Buy Powerups',
-                 'Buy Tokens', 'Buy Items', 'Exit')
-    for i in range(len(storeMenu)):
-        print('{}. {}'.format(i+1, storeMenu[i]))
-
-    # allowing empty here will enable the user to just go back to the main menu
-    prompt = validate('Enter a menu option: (1-5) ',
-                      int, 1, 5, allowEmpty=True)
-
-    wait_clear(clear=True)
-    info()
-    if prompt == 1:
-        print('Troops: ${}/millitant'.format(items['troops']))
-        prompt = validate('How many would you like to buy: ',
-                          int, 0, cost=items['troops'], allowEmpty=True)
-        if prompt == 'exit':
-            store()
-        userValues['troops'][0] += prompt
-    elif prompt == 2:
-        for i in range(0, 2):
-            print('{}. {} - ${}'.format(i+1,
-                                        list(items.keys())[i+1], list(items.values())[i+1]))
-        prompt = validate_bool(
-            'Which would you like to buy: ', ['1', '2'])
-        if prompt == '0':
-            store()
-        powerup = 'nuke' if prompt else 'laser'
-        cost = list(items.values())[1] if prompt else list(items.values())[2]
-        amount = validate('How many {} would you like to buy: '.format(powerup),
-                          int, 0, cost=cost, allowEmpty=True)
-        if amount == 'exit':
-            store()
-        userValues['powerups'][int(prompt)-1] += amount
-    elif prompt == 3:
-        print('tokens: ${}'.format(items['tokens']))
-        prompt = validate('How many would you like to buy: ',
-                          int, 0, cost=items['tokens'], allowEmpty=True)
-        if prompt == 'exit':
-            store()
-        userValues['token'] += prompt
-    elif prompt == 4:
-        for i in range(4, len(items)):
-            print('{}. {} - ${}'.format(i-3,
-                                        list(items.keys())[i], list(items.values())[i]))
-        prompt = validate(
-            'What would you like to buy: (1-{}) '.format(len(items)-4), int, 0, len(items))
-        amount = validate('How many would you like to buy: ',
-                          int, 0, cost=list(items.values())[prompt+3], allowEmpty=True)
-        if prompt == 'exit':
-            store()
-        if prompt == 1:
-            userValues['hp'] += 5*amount
+    storeItems.display(value)
+    items = list(storeItems.items[value].keys())
+    costs = list(storeItems.items[value].values())
+    prompt = validate('What item Do you want to buy: (1-{}) '.format(len(items)),
+                      int, 0, len(items), allowEmpty=True)
+    amount = validate('How many {} do you want to buy: '.format(items[prompt-1]),
+                      int, 0, cost=costs[prompt-1][0], allowEmpty=True)
+    if amount == 'exit':
+        return True
+    if items[prompt-1] == 'nuke':
+        userValues[value][0] += amount
+    elif items[prompt-1] == 'laser':
+        userValues[value][1] += amount
     else:
-        menu()
-    store()
+        userValues[costs[prompt-1][1]][0] += amount
 
 
 def train():
@@ -343,50 +310,29 @@ def train():
 
 
 # allows me to change any value from in the game
-def debug():
+def debug(value):
 
     global userValues
 
+    currentVal = userValues[value]
     wait_clear(clear=True)
-    info()
-    print('Debug Menu')
-    print('----------------------')
-    options = {'Change Troops': 'troops',
-               'Change Reserve': 'troops',
-               'Change Money': 'money',
-               'Change Tokens': 'tokens',
-               'Change HP': 'hp',
-               'Change Power-Ups': 'powerups',
-               'Change Battles Won': 'battlesWon',
-               'Change Total Battles': 'totalBattles',
-               'Save Game': 'save',
-               'Load Game': 'load',
-               'Main Menu': menu}
-    for i in range(len(options)):
-        print('{}. {}'.format(i+1, list(options.keys())[i]))
-    print('----------------------')
-    action = validate('What would you like to do? (1-{}) '.format(len(options)),
-                      int, 0, len(options), allowEmpty=True)
-    if action == 'exit':
-        debug()
-    if action > 0 and action <= 2:
-        change = validate('Change this to: ', int)
-        userValues[list(options.values())[action-1]][action-1] = change
-        debug()
-    if action > 2 and action < 9:
-        change = validate('Change this to: ', int)
-        userValues[list(options.values())[action-1]] = change
-        debug()
-    if action == 9:
-        filename = validate('Enter username of save: ', str)
-        save_load(False, filename)
-        debug()
-    if action == 10:
-        filename = validate('Enter username of save: ', str)
-        save_load(True, filename)
-        debug()
-    if action == 11:
-        menu()
+    print('Current Value: {}'.format(currentVal))
+    if isinstance(currentVal, list):
+        for i, n in zip(currentVal, range(len(currentVal))):
+            newValue = validate('Change item {} ({}) to: '.format(
+                n+1, i), type(currentVal[n]), allowEmpty=True)
+            if newValue == 'exit':
+                userValues[value][n] = currentVal[n]
+            else:
+                userValues[value][n] = newValue
+        return True
+    else:
+        newValue = validate('Change {} to: '.format(
+            value), type(currentVal), allowEmpty=True)
+    if newValue == 'exit':
+        return True
+    else:
+        userValues[value] = newValue
 
 
 def battle():
@@ -582,4 +528,5 @@ def retire():
 
 
 if __name__ == '__main__':
+    initialize()
     main()
