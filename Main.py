@@ -1,9 +1,9 @@
 ''' File Info
 Author: Cameron Varley
-Date: 2020-02-06 21:41:54
+Date: 2020-02-07 13:10:03
 Filename: textwars.py
 Description: Text based war game using python, rewrite of my original textwars.
-version: 2.1.0
+version: 2.2.0
 '''
 
 import time
@@ -15,20 +15,23 @@ import sys
 import pymenu as pm
 import pystore as ps
 
+
+class user():
+    def __init__(self, username='', playedBefore=False, money=500, troops=[1, 0], battlesWon=0, totalBattles=0, token=0, hp=50, powerups=[0, 0]):
+        self.username = username
+        self.playedBefore = playedBefore
+        self.money = money
+        self.troops = troops
+        self.battlesWon = battlesWon
+        self.totalBattles = totalBattles
+        self.token = token
+        self.hp = hp
+        self.powerups = powerups
+
+
 # Game Variables
 version = '2.0.2'
-userValues = {'username': 'username',
-              'playedBefore': False,
-              'money': 500,
-              'troops': [1, 0],
-              'battlesWon': 0,
-              'totalBattles': 0,
-              'token': 0,
-              'hp': 50,
-              'points': 0,
-              'powerups': [0, 0]}
-# Hints bool will be used to toggle hints on or off when asked if played before
-hints = False
+player = user()
 
 # initialize the menus
 storeItems = ps.store('store')
@@ -41,7 +44,7 @@ debugMenu = mainMenu.newSubMenu('Debug', 'mainMenu')
 mainMenu.populate([storeMenu, 'battle', 'scout', 'gamble',
                    'hospital', 'retire', 'save', debugMenu])
 
-for i in userValues:
+for i in vars(user()).keys():
     debugMenu.newItems(i)
 
 
@@ -59,29 +62,24 @@ def validate(msg, type_, min=None, max=None, cost=None, allowEmpty=False):
         userInput = input(msg)
         try:
             # first check if user didnt enter anything, if so then return an exit notice
-            if allowEmpty:
-                if not userInput:
-                    return 'exit'
+            if allowEmpty and not userInput:
+                return None
             # try and verify the input value against the type_ provided
             userInput = type_(userInput)
             # Check if the min and max are set
-            if max != None and min != None:
+            if max and min:
                 # when user enters a value between allowed range return else error
                 if userInput <= max and userInput >= min:
                     return type_(userInput)
-                else:
-                    raise ValueError()
+                raise ValueError()
             # if only max is set ensure proper entry (same for min)
-            elif max != None:
-                if userInput > max:
-                    raise ValueError()
-            elif min != None:
-                if userInput < min:
-                    raise ValueError()
+            elif max and userInput > max:
+                raise ValueError()
+            elif min and userInput < min:
+                raise ValueError()
             # if cost is set then we will check if the user has enough funds to do it before continuing
-            if cost != None:
-                if not validate_cost(int(cost*userInput)):
-                    continue
+            if cost and not validate_cost(int(cost*userInput)):
+                continue
         except ValueError:
             print('Your input was not valid')
             continue
@@ -95,8 +93,8 @@ def validate(msg, type_, min=None, max=None, cost=None, allowEmpty=False):
 def validate_bool(msg, options, exit='0'):
     while True:
         userInput = input('{}({}/{}) '.format(msg, options[0], options[1]))
-        if userInput == exit or len(userInput) == int(exit):
-            return exit
+        if userInput == exit or len(userInput) == exit:
+            return None
         if userInput.lower() in options:
             return True if userInput.lower() == options[0] else False
         else:
@@ -105,27 +103,26 @@ def validate_bool(msg, options, exit='0'):
 
 # a simple script that will just check if the user has enough funds for the required item
 def validate_cost(cost):
-    global userValues
-    if cost > userValues['money']:
+    global player
+    if cost > player.money:
         print("Insufficient Funds!")
         return False
     else:
-        userValues['money'] -= cost
+        player.money -= cost
         return True
 
 
 # this will pickle the uservalues into a savefile for loading later
-def save_load(func, username):
-
-    global userValues
-
-    if func:
+def save(load=False):
+    global player
+    username = player.username
+    if load:
         with open(username, 'rb') as f:
             ask = validate_bool('Reset your old game? ', ['y', 'n'])
-            userValues = userValues if ask else pickle.load(f)
+            player = player if ask else pickle.load(f)
     else:
         with open(username, 'wb') as f:
-            pickle.dump(userValues, f)
+            pickle.dump(player, f)
 
 
 # allows to clear or wait based on what is needed
@@ -140,29 +137,25 @@ def wait_clear(wait=False, clear=False, length=0):
 
 # Main script to begin the game
 def main():
-
-    global userValues
-    global hints
-
+    global player
     wait_clear(clear=True)
     print('TextWars V{}'.format(version))
     print()
     print('Lets get started with a few questions!')
-    userValues['username'] = validate('What is your name? ', str)
+    player.username = validate('What is your name? ', str)
     # if the user enters no here we will enable hints
-    userValues['playedBefore'] = validate_bool(
+    player.playedBefore = validate_bool(
         'Have you played before? ', ['y', 'n'])
-    hints = True if not userValues['playedBefore'] else False
-    if userValues['playedBefore']:
+    if player.playedBefore:
         try:
             # Check if file can be loaded
-            save_load(True, userValues['username'])
+            save(True)
         except:
             # create save if the users save couldnt be found
             print('Old save not found')
-            userValues['playedBefore'] = False
+            player.playedBefore = False
     print('Saving')
-    save_load(False, userValues['username'])
+    save()
     menu()
 
 
@@ -173,14 +166,13 @@ def main():
 def menu():
     toDisplay = mainMenu
     while True:
-        wait_clear(clear=True)
         info()
         toDisplay.display()
         prompt = validate('Enter an option: ', int, 1,
                           len(toDisplay.items), allowEmpty=True)
-        if prompt == 'exit' and toDisplay.parent != None:
+        if not prompt and toDisplay.parent:
             toDisplay = globals()[toDisplay.parent]
-        elif prompt == 'exit':
+        elif not prompt:
             toDisplay = toDisplay
         else:
             value = list(toDisplay.items.values())[int(prompt)-1]
@@ -204,27 +196,17 @@ def menu():
 # we ensure that there is always 10 troops available when
 # there is some in reserve
 def transport():
-
-    global userValues
-
-    if userValues['troops'][0] < 10 and userValues['troops'][1] > 0:
-        difference = 10 - userValues['troops'][0]
-        userValues['troops'][0] += difference
-        userValues['troops'][1] -= difference
-        if userValues['troops'][1] < 0:
-            userValues['troops'][0] += userValues['troops'][1]
-        print('Calling in the reserve')
-        wait_clear(True, length=2)
-    elif userValues['troops'][0] >= 11:
-        difference = userValues['troops'][0] - 10
-        userValues['troops'][0] -= difference
-        userValues['troops'][1] += difference
-        print('Sending troops to the reserves')
-        wait_clear(True, length=2)
-    if userValues['troops'][0] < 0:
-        userValues['troops'][0] = 0
-    elif userValues['troops'][1] < 0:
-        userValues['troops'][1] = 0
+    global player
+    if player.troops[0] < 10 and player.troops[1] > 0:
+        print('Calling in the reserves')
+        while player.troops[1] > 0:
+            player.troops[0] += 1
+            player.troops[1] -= 1
+    if player.troops[0] > 10:
+        print('Sending to reserves')
+        while player.troops[0] > 10:
+            player.troops[0] -= 1
+            player.troops[1] += 1
 
 
 # print all the user statistics
@@ -233,56 +215,49 @@ def info():
     check()
     transport()
     print(str('-')*20)
-    print("Troops/Extra:   {}/{}".format(userValues['troops'][0],
-                                         userValues['troops'][1]))
-    print("Money:          {}".format(userValues['money']))
-    print("Casino Tokens:  {}".format(userValues['token']))
-    print("HP:             {}".format(userValues['hp']))
-    print("Nukes/Lasers:   {}/{}".format(userValues['powerups'][0],
-                                         userValues['powerups'][1]))
-    print("Points:         {}".format(userValues['points']))
+    print("Troops/Extra:   {}/{}".format(player.troops[0],
+                                         player.troops[1]))
+    print("Money:          {}".format(player.money))
+    print("Casino Tokens:  {}".format(player.token))
+    print("HP:             {}".format(player.hp))
+    print("Nukes/Lasers:   {}/{}".format(player.powerups[0],
+                                         player.powerups[1]))
     print(str('-')*20)
     print()
 
 
 # bonus if you have reached a certain number of battle
 def check():
-
-    global userValues
-
-    if userValues['battlesWon'] % 5 == 0 and userValues['battlesWon'] > 0:
-        userValues['token'] += 1
-        userValues['money'] += 200
-        userValues['battlesWon'] = 0
+    global player
+    if player.battlesWon % 5 == 0 and player.battlesWon > 0:
+        player.token += 1
+        player.money += 200
+        player.battlesWon = 0
         print('Your paycheck has arrived')
         wait_clear(True, length=2)
-    if userValues['totalBattles'] % 5 == 0 and userValues['totalBattles'] > 0:
+    if player.totalBattles % 5 == 0 and player.totalBattles > 0:
         tax()
-        userValues['totalBattles'] = 0
-    if userValues['hp'] <= 0:
+        player.totalBattles = 0
+    if player.hp <= 0:
         retire()
 
 
 # we will take mney because taxes
 def tax():
-
-    global userValues
-
+    global player
     print('Paying your troops 13%')
-    tax = 13 * userValues['money'] / 100
-    if userValues['money'] > 0:
-        userValues['money'] -= tax
+    tax = 13 * player.money / 100
+    if player.money > 0:
+        player.money -= tax
     else:
-        userValues['money'] += tax
+        player.money += tax
 
 
 # this is the store funstion, I want to eventually make this significantly smaller
 # the universal menu function will be best for this but i will need to find a way to
 # tell items apart
 def purchase(value):
-
-    global userValues
-
+    global player
     wait_clear(clear=True)
     storeItems.display(value)
     items = list(storeItems.items[value].keys())
@@ -291,124 +266,98 @@ def purchase(value):
                       int, 0, len(items), allowEmpty=True)
     amount = validate('How many {} do you want to buy: '.format(items[prompt-1]),
                       int, 0, cost=costs[prompt-1][0], allowEmpty=True)
-    if amount == 'exit':
+    if not amount:
         return True
     if items[prompt-1] == 'nuke':
-        userValues[value][0] += amount
+        player.powerups[0] += amount
     elif items[prompt-1] == 'laser':
-        userValues[value][1] += amount
+        player.powerups[1] += amount
+    elif type(getattr(player, costs[prompt-1][1])) == list:
+        getattr(player, costs[prompt-1][1])[0] += amount
     else:
-        userValues[costs[prompt-1][1]][0] += amount
-
-
-def train():
-
-    global train
-
-    print("Welcome to training mode, we will give you hints along the way")
-    train = True
+        currentVal = getattr(player, costs[prompt-1][1])
+        setattr(player, costs[prompt-1][1], currentVal+amount)
 
 
 # allows me to change any value from in the game
 def debug(value):
-
-    global userValues
-
-    currentVal = userValues[value]
+    global player
+    currentVal = getattr(player, value)
     wait_clear(clear=True)
     print('Current Value: {}'.format(currentVal))
     if isinstance(currentVal, list):
-        for i, n in zip(currentVal, range(len(currentVal))):
+        for n, i in enumerate(currentVal):
             newValue = validate('Change item {} ({}) to: '.format(
                 n+1, i), type(currentVal[n]), allowEmpty=True)
-            if newValue == 'exit':
-                userValues[value][n] = currentVal[n]
+            if not newValue:
+                getattr(player, value)[n] = currentVal[n]
             else:
-                userValues[value][n] = newValue
+                getattr(player, value)[n] = newValue
         return True
     else:
         newValue = validate('Change {} to: '.format(
             value), type(currentVal), allowEmpty=True)
-    if newValue == 'exit':
+    if not newValue:
         return True
     else:
-        userValues[value] = newValue
+        setattr(player, value, newValue)
 
 
 def battle():
-
-    global userValues
-
-    wait_clear(clear=True)
+    global player
     info()
     print('Welcome to the battlefield')
     enemyTroops = enemy_Gen()
     if enemyTroops == 'Flee' or enemyTroops == 0:
         print('There are no enemy troops left')
         wait_clear(True, length=2)
-        menu()
+        return True
     print('Enemy Troops: {}'.format(enemyTroops))
-    if any(i > 0 for i in list(userValues['powerups'])):
+    if any(i > 0 for i in list(player.powerups)):
         prompt = validate_bool('Would you like to use a powerup? ', ['y', 'n'])
-        if prompt and userValues['powerups'][0] > 0:
+        if prompt and player.powerups[0] > 0:
             nuke = validate_bool('Use Nuke: ', ['y', 'n'])
-            userValues['powerups'][0] -= 1 if nuke else 0
-            userValues['money'] = enemyTroops*50
-            enemyTroops = 0
-        elif prompt and userValues['powerups'][1] > 0:
+            player.powerups[0] -= 1 if nuke else 0
+        elif prompt and player.powerups[1] > 0:
             laser = validate_bool('Use Laser: ', ['y', 'n'])
-            userValues['powerups'][1] -= 1 if laser else 0
-            userValues['money'] = 5*50
-            enemyTroops -= 5
+            player.powerups[1] -= 1 if laser else 0
+        player.money = enemyTroops*50 if nuke else 5*50
+        enemyTroops = 0 if nuke else enemyTroops-5
         # if prompt:
         loot()
-    if enemyTroops == 'flree' or enemyTroops == 0:
-        print('There are no enemy troops left')
-        wait_clear(True, length=2)
-        menu()
-    if userValues['troops'][0] == 0:
-        print('What were you thinking attacking with no troops?')
-        loss = random.randint(1, 10)
-        userValues['hp'] -= loss
-        print('minus {} health'.format(loss))
-        wait_clear(True, length=2)
-    elif enemyTroops == math.ceil(userValues['troops'][0] * 1.5):
+    if enemyTroops == math.ceil(player.troops[0] * 1.5):
         print('Sir, they attacked before we had the chance.')
         print('We lost a HALF of our soldiers.')
-        userValues['troops'][0] //= 2
-        userValues['hp'] -= 3
+        player.troops[0] //= 2
+        player.hp -= 3
         wait_clear(True, length=2)
-    elif enemyTroops > userValues['troops'][0]:
+    elif enemyTroops > player.troops[0]:
         print('Sir, they attacked before we had the chance.')
         print('We lost a member of our family today')
-        userValues['troops'][0] -= 1
-        userValues['hp'] -= 1
-        userValues['totalBattles'] += 1
+        player.troops[0] -= 1
+        player.hp -= 1
         wait_clear(True, length=2)
-    elif enemyTroops < userValues['troops'][0]:
+    elif enemyTroops < player.troops[0]:
         print('Sir, We have won the battle.')
         earn = enemyTroops*10
         print('We have earned ${}'.format(earn))
-        userValues['money'] += earn
-        userValues['totalBattles'] += 1
-        userValues['battlesWon'] += 1
+        player.money += earn
+        player.battlesWon += 1
         loot()
         wait_clear(True, length=2)
     else:
         print('It was a tie')
         print('auto re-roll')
-        userValues['totalBattles'] += 1
         wait_clear(True, length=2)
         battle()
-    menu()
+    player.totalBattles += 1
+    return True
 
 
 def scout():
     scout = random.randint(1, 10)
     if scout % 3 == 0:
         loot()
-        wait_clear(True, length=2)
-        menu()
     elif scout % 4 == 0:
         print('You encountered an enemy!')
         wait_clear(True, length=1)
@@ -417,102 +366,77 @@ def scout():
         battle()
     else:
         print('Nothing to report')
-        wait_clear(True, length=2)
-        menu()
+    wait_clear(True, length=2)
+    return True
 
 
 def gamble():
-
-    global userValues
-
-    if userValues['money'] == 0:
+    global player
+    if player.money == 0:
         print('Come back when you have money to loose')
         wait_clear(True, length=2)
-        menu()
-
-    if userValues['token'] > 0:
-        loot = random.randint(1, 10)
-        if loot == 1:
-            userValues['money'] += 100
-            print("You've won $100")
-        elif loot == 2:
-            userValues['money'] -= 100
-            print("You've lost $100")
-        elif loot == 3:
-            userValues['money'] += 200
-            print("You've won $200")
-        elif loot == 4:
-            userValues['money'] -= 200
-            print("You've lost $200")
-        elif loot == 5:
-            userValues['money'] += 1
-            print("You've won an extra token")
-        elif loot == 7:
-            userValues['money'] += 2
-            print("You've won two extra tokens")
-        elif loot == 9:
-            userValues['troops'][0] += 2
-            print("You've won two extra troops")
+        return True
+    if player.token > 0:
+        lootnum = random.randint(1, 10)
+        if not lootnum % 2:
+            loot()
+        elif lootnum == 1:
+            print('You lost $100')
+            player.money -= 100
+        elif lootnum == 3:
+            print('You lost $200')
+            player.money -= 200
         else:
-            print("You've recieved... nothing!")
-        wait_clear(True, length=2)
-        userValues['token'] -= 1
-        menu()
+            print('Better luck nexk time')
+        player.token -= 1
     else:
         print("You cannot use the casino right now")
-        wait_clear(True, length=2)
-        menu()
-
-
-def loot():
-
-    global userValues
-
-    loot = random.randint(1, 10)
-    if loot == 1:
-        userValues['money'] += 100
-        print("You've found $100 in loot")
-    elif loot == 3:
-        userValues['money'] += 200
-        print("You've found $200 in loot")
-    elif loot == 5:
-        userValues['token'] += 1
-        print("You've found a token")
-    elif loot == 7:
-        userValues['token'] += 2
-        print("You've found two tokens")
-    elif loot == 9:
-        userValues['troops'][0] += 2
-        print("You've taken 2 hostage for your own troops")
-    else:
-        print("You didn't find any loot")
     wait_clear(True, length=2)
 
 
+def loot():
+    global player
+    loot = random.randint(1, 10)
+    if loot == 1:
+        player.money += 100
+        print("You've found $100 in loot")
+    elif loot == 3:
+        player.money += 200
+        print("You've found $200 in loot")
+    elif loot == 5:
+        player.token += 1
+        print("You've found a token")
+    elif loot == 7:
+        player.token += 2
+        print("You've found two tokens")
+    elif loot == 9:
+        player.troops[0] += 2
+        print("You've gained new recruits")
+    else:
+        player.money += 5
+        print("You got $5 as a consolation prize")
+
+
 def hospital():
-    wait_clear(clear=True)
-
-    global userValues
-
+    global player
     cost = 225
     increase = 15
-
     info()
     print('Hospital')
     print('Treatment: ${} for {}HP per hour'.format(cost, increase))
     prompt = validate(
         'How long would you like to stay? (hr) ', int, 0, cost=cost, allowEmpty=True)
-    if prompt == 'exit':
-        menu()
-    userValues['money'] -= prompt * cost
-    userValues['hp'] += increase * prompt
-    menu()
+    if not prompt:
+        return True
+    player.money -= prompt * cost
+    player.hp += increase * prompt
+    return True
 
 
 # generates a random number of enemies to fight
 def enemy_Gen():
-    maxTroops = userValues['troops'][0] * 1.35
-    minTroops = userValues['troops'][0] - (userValues['troops'][0] * 0.35)
+    maxTroops = player.troops[0] * 1.35
+    minTroops = player.troops[0] - (player.troops[0] * 0.35)
     fleeChance = random.randint(1, 100)
     numTroops = random.randint(math.floor(minTroops), math.ceil(maxTroops))
     if fleeChance <= 25 or numTroops == 0:

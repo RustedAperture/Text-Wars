@@ -26,9 +26,9 @@ class menu(object):
             self.newItems(i)
 
     def newItems(self, item, func=None):
-        if isinstance(item, menu) and func == None:
+        if isinstance(item, menu) and not func:
             func = item.name.lower()
-        func = item if func == None else func
+        func = item if not func else func
         self.items.update({item: func})
 
     def newSubMenu(self, name, parent):
@@ -40,7 +40,7 @@ class menu(object):
     def display(self):
         print('{} Menu'.format(self.name))
         print(str('-')*20)
-        for i, n in zip(self.items.keys(), range(len(self.items.keys()))):
+        for n, i in enumerate(self.items.keys()):
             if isinstance(i, menu):
                 print('{}. {}'.format(n+1, i.name.title()))
             else:
