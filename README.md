@@ -7,7 +7,12 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 Requirement: Python3
 
 ## Change Log
-#### Version 2.2.0 (latest)
+#### Version 2.2.1 (latest)
+1. Documentation changes
+2. Change return true to just return
+3. fixed typos
+4. fixed issue that would crash game if user didnt enter a value in the store
+#### Version 2.2.0
 major changes to the base code. spring cleaning as well
 1. Player class introduced to make the code easier to read
 2. player values are now accessed by the player.value instead of userVal[value]
