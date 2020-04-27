@@ -12,7 +12,7 @@
 #include "menu.cpp"
 #include "player.cpp"
 
-#define VERSION 1.5
+#define VERSION 1.6
 
 using namespace std;
 
@@ -43,7 +43,7 @@ int get_int(int min, int max, string prompt)
 
     while (true)
     {
-        cout << prompt << " (" << min << "-" << max << ") ";
+        cout << prompt << " (" << min << "-" << max << ") " << flush;
         getline(cin, str_number);         //get string input
         stringstream convert(str_number); //turns the string into a stream
 
@@ -51,7 +51,7 @@ int get_int(int min, int max, string prompt)
         if (convert >> ret_integer && !(convert >> str_number) && ret_integer >= min && ret_integer <= max)
             return ret_integer;
 
-        cin.clear(); //just in case an error occurs with cin (eof(), etc)
+        cin.clear();
         cerr << "Input must be between " << min << " and " << max << ". Please try again.\n";
     }
 }
@@ -102,14 +102,16 @@ void transport()
 }
 void tax()
 {
-    cout << "Paying your troops 13%." << endl;
-    system("PAUSE");
     float tax = 13 * player.money / 100;
-    if (player.money > 0)
+    if (tax == 0)
+        tax = 100;
+    if (player.money > 0 && player.troops[0] > 0)
     {
+        cout << "Paying your troops 13%." << endl;
+        system("PAUSE");
         player.money -= tax;
     }
-    else
+    else if (player.money <= 0)
     {
         cout << "It's your lucky day!" << endl;
         system("PAUSE");
@@ -198,6 +200,8 @@ int enemygen()
     srand(time(NULL));
     float mintroops = player.troops[0] - (player.troops[0] * 0.35);
     float maxtroops = player.troops[0] * 1.35;
+    if (maxtroops == 0)
+        maxtroops = 5;
     int mod = (ceil(maxtroops) - floor(mintroops) + 1) + floor(mintroops);
     int enemies = rand() % mod;
     int flee_chance = rand() % 100 + 1;
@@ -296,6 +300,7 @@ void battle()
         system("PAUSE");
         return;
     }
+    cout << "Enemy Troops: " << enemy_troops << endl;
     if (player.powerups[0] > 0 || player.powerups[1] > 0)
     {
         bool prompt;
@@ -303,9 +308,11 @@ void battle()
         bool laser;
 
         prompt = get_bool("Would you like to use a powerup?");
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         if (prompt && player.powerups[0] > 0)
         {
             nuke = get_bool("Would you like to use a nuke?");
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (nuke)
             {
                 player.powerups[0]--;
@@ -316,38 +323,54 @@ void battle()
         else if (prompt && player.powerups[1] > 0)
         {
             laser = get_bool("Would you like to use a laser?");
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (laser)
             {
-                player.powerups[0]--;
+                player.powerups[1]--;
                 player.money += 5 * 50;
                 enemy_troops -= 5;
             }
         }
     }
-    cout << "Enemy Troops: " << enemy_troops << endl;
+    if (debug)
+        cout << "Enemy Troops: " << enemy_troops << endl;
+    if (player.troops[0] == 0)
+        player.hp -= 10;
     if (enemy_troops == ceil(player.troops[0] * 1.5))
     {
         cout << "Sir, they attacked before we had the chance." << endl;
         cout << "We lost a HALF of our soldiers." << endl;
-        player.troops[0] /= 2;
-        player.hp -= 3;
+        if (player.troops[0] != 0)
+        {
+            player.troops[0] /= 2;
+            player.hp -= 3;
+        }
         system("PAUSE");
     }
     else if (enemy_troops > player.troops[0])
     {
         cout << "Sir, they attacked before we had the chance." << endl;
         cout << "We lost a member of our family today" << endl;
-        player.troops[0]--;
-        player.hp--;
+        if (player.troops[0] != 0)
+        {
+            player.troops[0]--;
+            player.hp--;
+        }
         system("PAUSE");
     }
-    else if (enemy_troops < player.troops[0])
+    else if (enemy_troops < player.troops[0] && enemy_troops > 0)
     {
         cout << "Sir, We have won the battle." << endl;
         earn += enemy_troops * 10;
         cout << "We have earned: $" << earn << endl;
         player.money += earn;
         player.battles_won++;
+        cout << "Checking for extra rewards" << endl;
+        loot();
+        system("PAUSE");
+    }
+    else if (enemy_troops <= 0)
+    {
         cout << "Checking for extra rewards" << endl;
         loot();
         system("PAUSE");

@@ -6,6 +6,16 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 
 ## Change Log
 
+### Version 1.6
+
+-   fixed tax math to prevent a divide by zero
+-   fixed enemy gen so that the enemy can have troops when we don't
+-   prevent our troops from going into negative
+-   remove extra health if we fight with no troops
+-   fixed error where you can have negative enemies
+-   fixed problem where nukes will change when using lasers
+-   fixed problem where user is told invalid input
+
 ### Version 1.5
 
 -   Introduced Menu Class (ported version of pymenu)
