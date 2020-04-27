@@ -6,6 +6,9 @@
 #include <ctime>
 #include <cmath>
 #include <limits>
+#include <tsl/ordered_map.h>
+
+#include "menu.cpp"
 
 #define VERSION 1
 
@@ -25,8 +28,13 @@ int tokens = 1;
 int hp = 50;
 int powerups[2] = {0, 0};
 
-vector<string> main_menu = {"Store", "Battle", "Scout", "Gamble", "Hospital", "Retire"};
-vector<string> store_menu = {"Troops", "Powerups", "Tokens", "Items", "Main Menu"};
+Menu main_menu;
+Menu store_menu;
+Menu *menu_to_show;
+vector<Menu *> menu_pointers;
+
+typedef void (*menu_method)(void);
+tsl::ordered_map<string, menu_method> main_menu_items;
 
 int get_int(int min, int max, string prompt)
 {
@@ -52,7 +60,7 @@ int get_int(int min, int max, string prompt)
 bool get_bool(string prompt)
 {
     char response;
-    cout << prompt << "(y/n) ";
+    cout << prompt << " (y/n) ";
     cin >> response;
     response = toupper(response);
 
@@ -157,23 +165,25 @@ int enemygen()
     return enemies;
 }
 
-int menu(vector<string> menu, string menu_name)
+int menu(Menu *menu)
 {
     while (true)
     {
         stats();
 
-        cout << menu_name << endl;
-        cout << "-----------" << endl;
-
-        for (int i = 0; i < menu.size(); i++)
+        menu->display_menu();
+        int choice = get_int(0, menu->item_names.size() - 1, "Enter an option: ");
+        if (choice < menu->item_names.size() && choice >= 0)
         {
-            cout << i << ". " << menu[i] << endl;
-        }
-        int choice = get_int(0, menu.size() - 1, "Enter an option: ");
-        if (choice < menu.size() && choice >= 0)
-        {
-            return choice;
+            if (menu->submenus.find(menu->item_names[choice]) != menu->submenus.end())
+            {
+                menu_to_show = menu->submenus.at(menu->item_names[choice])->self;
+                return -1;
+            }
+            else
+            {
+                return choice;
+            }
         }
     }
 }
@@ -252,7 +262,7 @@ void store(int submenu)
     }
 }
 
-int battle()
+void battle()
 {
     stats();
 
@@ -263,7 +273,7 @@ int battle()
     {
         cout << "Enemy Fled" << endl;
         system("PAUSE");
-        return 0;
+        return;
     }
     if (powerups[0] > 0 || powerups[1] > 0)
     {
@@ -330,7 +340,7 @@ int battle()
     }
 
     total_battles++;
-    return 0;
+    return;
 }
 
 void scout()
@@ -409,6 +419,24 @@ void hospital()
     hp += heal * time;
 }
 
+void initialize()
+{
+    // Method to initialize the menu system
+    menu_pointers.push_back(&main_menu);
+    menu_pointers.push_back(&store_menu);
+
+    store_menu = main_menu.new_sub_menu("Store", menu_pointers[0], menu_pointers[1]);
+
+    main_menu_items.insert({"Battle", &battle});
+    main_menu_items.insert({"Scout", &scout});
+    main_menu_items.insert({"Gamble", &gamble});
+    main_menu_items.insert({"Hospital", &hospital});
+
+    main_menu.add_items(main_menu_items);
+
+    menu_to_show = menu_pointers[0];
+}
+
 int main()
 {
     system("CLS");
@@ -432,47 +460,13 @@ int main()
 
     cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
+    initialize();
+
     int choice;
-    vector<string> menu_to_show = main_menu;
-    string menu_name = "Main Menu";
 
     while (true)
     {
-        choice = menu(menu_to_show, menu_name);
-
-        if (menu_to_show == main_menu)
-        {
-            switch (choice)
-            {
-            case 0:
-                menu_to_show = store_menu;
-                menu_name = "Store";
-                break;
-            case 1:
-                battle();
-                break;
-            case 2:
-                scout();
-                break;
-            case 3:
-                gamble();
-                break;
-            case 4:
-                hospital();
-                break;
-            case 5:
-                cout << "Thanks For Playing" << endl;
-                return 0;
-            }
-        }
-        else if (menu_to_show == store_menu)
-        {
-            if (choice >= 0 && choice <= 3)
-            {
-                store(choice);
-            }
-            menu_to_show = main_menu;
-            menu_name = "Main Menu";
-        }
+        choice = menu(menu_to_show);
+        menu_to_show->item_methods[1]();
     }
 }
