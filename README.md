@@ -19,6 +19,9 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 
 -   Ported over the basic code to make the game playable
 
-## TODO
+## Thing to Add
 
--   make a todo
+-   Save Game
+-   Config Files (Loot Table, Variable)
+-   Enemy Types/Power System
+-   Modding System (Items, Enemies)
