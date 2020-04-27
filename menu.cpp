@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
-#include <tsl/ordered_map.h>
+
+#include "Include/tsl/ordered_map.h"
 
 using namespace std;
 
@@ -15,6 +16,10 @@ public:
     vector<menu_method> item_methods;
     Menu *parent;
     Menu *self;
+
+    void blank_method()
+    {
+    }
 
     void add_items(tsl::ordered_map<string, menu_method> items)
     {
@@ -31,7 +36,6 @@ public:
         submenu.name = name;
         submenu.parent = parent;
         submenu.self = self;
-        this->item_names.push_back(name);
         this->submenus.insert({name, self});
         return submenu;
     }

@@ -6,8 +6,8 @@
 #include <ctime>
 #include <cmath>
 #include <limits>
-#include <tsl/ordered_map.h>
 
+#include "Include/tsl/ordered_map.h"
 #include "menu.cpp"
 
 #define VERSION 1
@@ -43,7 +43,6 @@ int get_int(int min, int max, string prompt)
 
     while (true)
     {
-        cin.clear();
         cout << prompt << "(" << min << "-" << max << ") ";
         std::getline(cin, str_number);         //get string input
         std::stringstream convert(str_number); //turns the string into a stream
@@ -165,29 +164,6 @@ int enemygen()
     return enemies;
 }
 
-int menu(Menu *menu)
-{
-    while (true)
-    {
-        stats();
-
-        menu->display_menu();
-        int choice = get_int(0, menu->item_names.size() - 1, "Enter an option: ");
-        if (choice < menu->item_names.size() && choice >= 0)
-        {
-            if (menu->submenus.find(menu->item_names[choice]) != menu->submenus.end())
-            {
-                menu_to_show = menu->submenus.at(menu->item_names[choice])->self;
-                return -1;
-            }
-            else
-            {
-                return choice;
-            }
-        }
-    }
-}
-
 bool purchase(int amount, int price)
 {
     if (amount * price <= money)
@@ -258,6 +234,39 @@ void store(int submenu)
             bought = purchase(amount, price);
             hp += amount * 10;
             break;
+        case 4:
+            menu_to_show = menu_pointers[0];
+        }
+    }
+}
+
+int menu(Menu *menu)
+{
+    while (true)
+    {
+        stats();
+
+        menu->display_menu();
+        int choice = get_int(0, menu->item_names.size() - 1, "Enter an option: ");
+        if (choice < menu->item_names.size() && choice >= 0)
+        {
+            if (menu->submenus.find(menu->item_names[choice]) != menu->submenus.end())
+            {
+                menu_to_show = menu->submenus.at(menu->item_names[choice])->self;
+                return -1;
+            }
+            else
+            {
+                if (menu->name == "Store")
+                {
+                    store(choice);
+                }
+                else
+                {
+                    (menu->item_methods[choice])();
+                }
+                return choice;
+            }
         }
     }
 }
@@ -282,7 +291,7 @@ void battle()
         bool laser;
 
         prompt = get_bool("Would you like to use a powerup?");
-        if (prompt and powerups[0] > 0)
+        if (prompt && powerups[0] > 0)
         {
             nuke = get_bool("Would you like to use a nuke?");
             if (nuke)
@@ -292,7 +301,7 @@ void battle()
                 enemy_troops = 0;
             }
         }
-        else if (prompt and powerups[1] > 0)
+        else if (prompt && powerups[1] > 0)
         {
             laser = get_bool("Would you like to use a laser?");
             if (laser)
@@ -427,10 +436,17 @@ void initialize()
 
     store_menu = main_menu.new_sub_menu("Store", menu_pointers[0], menu_pointers[1]);
 
+    main_menu_items.insert({"Store", &initialize});
     main_menu_items.insert({"Battle", &battle});
     main_menu_items.insert({"Scout", &scout});
     main_menu_items.insert({"Gamble", &gamble});
     main_menu_items.insert({"Hospital", &hospital});
+
+    store_menu.item_names.push_back("Troops");
+    store_menu.item_names.push_back("Powerup");
+    store_menu.item_names.push_back("Token");
+    store_menu.item_names.push_back("Items");
+    store_menu.item_names.push_back("Main Menu");
 
     main_menu.add_items(main_menu_items);
 
@@ -467,6 +483,5 @@ int main()
     while (true)
     {
         choice = menu(menu_to_show);
-        menu_to_show->item_methods[1]();
     }
 }
