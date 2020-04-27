@@ -183,8 +183,6 @@ void store(int submenu)
 {
     bool bought = false;
 
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
     while (!(bought))
     {
         stats();
@@ -236,37 +234,7 @@ void store(int submenu)
             break;
         case 4:
             menu_to_show = menu_pointers[0];
-        }
-    }
-}
-
-int menu(Menu *menu)
-{
-    while (true)
-    {
-        stats();
-
-        menu->display_menu();
-        int choice = get_int(0, menu->item_names.size() - 1, "Enter an option: ");
-        if (choice < menu->item_names.size() && choice >= 0)
-        {
-            if (menu->submenus.find(menu->item_names[choice]) != menu->submenus.end())
-            {
-                menu_to_show = menu->submenus.at(menu->item_names[choice])->self;
-                return -1;
-            }
-            else
-            {
-                if (menu->name == "Store")
-                {
-                    store(choice);
-                }
-                else
-                {
-                    (menu->item_methods[choice])();
-                }
-                return choice;
-            }
+            break;
         }
     }
 }
@@ -451,6 +419,40 @@ void initialize()
     main_menu.add_items(main_menu_items);
 
     menu_to_show = menu_pointers[0];
+}
+
+int menu(Menu *menu)
+{
+    while (true)
+    {
+        stats();
+
+        menu->display_menu();
+        int choice = get_int(0, menu->item_names.size() - 1, "Enter an option: ");
+        if (choice < menu->item_names.size() && choice >= 0)
+        {
+            if (menu->submenus.find(menu->item_names[choice]) != menu->submenus.end())
+            {
+                menu_to_show = menu->submenus.at(menu->item_names[choice])->self;
+            }
+            else
+            {
+                if (menu->name == "Store" && choice == menu->item_names.size() - 1)
+                {
+                    menu_to_show = menu->parent;
+                }
+                else if (menu->name == "Store")
+                {
+                    store(choice);
+                }
+                else
+                {
+                    (menu->item_methods[choice])();
+                }
+            }
+        }
+        return choice;
+    }
 }
 
 int main()
