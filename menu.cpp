@@ -42,7 +42,7 @@ public:
 
     void display_menu()
     {
-        string line(20, '-');
+        string line(22, '-');
         cout << this->name << " Menu" << endl;
         cout << line << endl;
         for (int i = 0; i < this->item_names.size(); i++)
