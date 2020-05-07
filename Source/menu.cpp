@@ -1,49 +1,48 @@
-#include "tsl/ordered_map.h"
+#include "menu.h"
 
-#include <iostream>
-#include <vector>
+#include <stdlib.h>
+#include <time.h>
 
-using namespace std;
+Menu::Menu() {}
 
-typedef void (*menu_method)(void);
-
-class Menu {
-  public:
-    string name = "Main";
-    vector<string> item_names;
-    tsl::ordered_map<string, Menu*> submenus;
-    vector<menu_method> item_methods;
-    Menu* parent;
-    Menu* self;
-
-    void blank_method() {}
-
-    void add_items(tsl::ordered_map<string, menu_method> items) {
-        for (auto i : items) {
-            this->item_names.push_back(i.first);
-            this->item_methods.push_back(i.second);
-        }
+Menu::Menu(std::string menu_title, Menu* parentMenu) :
+  _menuTitle(menu_title), _parentMenu(parentMenu) {
+    if (this->_parentMenu != NULL) {
+        this->hasParent = true;
     }
+    srand(time(NULL));
+    this->menuId = rand() % 100;
+}
 
-    Menu new_sub_menu(string name, Menu* parent, Menu* self) {
-        Menu submenu;
-        submenu.name = name;
-        submenu.parent = parent;
-        submenu.self = self;
-        this->submenus.insert({name, self});
-        return submenu;
-    }
+Menu::~Menu(){};
 
-    void display_menu() {
-        string line(22, '-');
-        cout << this->name << " Menu" << endl;
-        cout << line << endl;
-        for (int i = 0; i < this->item_names.size(); i++) {
-            if (submenus.find(this->item_names[i]) != submenus.end()) {
-                cout << i << ". " << submenus.at(this->item_names[i])->name << endl;
-            } else {
-                cout << i << ". " << this->item_names[i] << endl;
-            }
-        }
+void Menu::addMenuOption(std::string text, MenuPointer function) {
+    int id = this->_menuOptions.size();
+    MenuOption menuOption = {id, text, function};
+    this->_menuOptions.push_back(menuOption);
+}
+
+void Menu::callMenuOption(int id) {
+    this->_menuOptions[id].function();
+}
+
+void Menu::printMenu() {
+    std::cout << this->_menuTitle << std::endl;
+    std::cout << "--------------------" << std::endl;
+    for (MenuOption entry : this->_menuOptions) {
+        std::cout << entry.id << ". " << entry.text << std::endl;
     }
-};
+    if (this->hasParent) {
+        std::cout << this->_menuOptions.size() << ". Previous Menu" << std::endl;
+    } else {
+        std::cout << this->_menuOptions.size() << ". Quit" << std::endl;
+    }
+}
+
+int Menu::getSize() {
+    return this->_menuOptions.size();
+}
+
+Menu* Menu::getParent() {
+    return this->_parentMenu;
+}

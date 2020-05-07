@@ -1,4 +1,4 @@
-#include "menu.cpp"
+#include "menu.h"
 #include "player.cpp"
 #include "tsl/ordered_map.h"
 
@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#define VERSION 1.7
+#define VERSION 1.8
 
 using namespace std;
 
@@ -21,14 +21,11 @@ bool debug = false;
 
 Player player;
 
-Menu main_menu;
-Menu store_menu;
-Menu debug_menu;
+Menu main_menu("Main Menu");
+Menu store_menu("Store Menu", &main_menu);
+Menu debug_menu("Debug Menu", &main_menu);
 Menu* menu_to_show;
 vector<Menu*> menu_pointers;
-
-typedef void (*menu_method)(void);
-tsl::ordered_map<string, menu_method> main_menu_items;
 
 void retire() {
     cout << "Thanks for playing." << endl;
@@ -410,6 +407,7 @@ void debugger(int var) {
             cout << fixed << "Current Username: " << player.username << endl;
             cout << "New Username: ";
             cin >> player.username;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             break;
         case 1:
             cout << fixed << "Current Balance: " << player.money << endl;
@@ -447,69 +445,52 @@ void debugger(int var) {
     }
 }
 
+void changeMenu(Menu* menu) {
+    menu_to_show = menu;
+}
+
 void initialize() {
     // Method to initialize the menu system
-    menu_pointers.push_back(&main_menu);
-    menu_pointers.push_back(&store_menu);
+    main_menu.addMenuOption("Store", std::bind(changeMenu, &store_menu));
+    main_menu.addMenuOption("Battle", battle);
+    main_menu.addMenuOption("Scout", scout);
+    main_menu.addMenuOption("Gamble", gamble);
+    main_menu.addMenuOption("Hospital", hospital);
     if (debug)
-        menu_pointers.push_back(&debug_menu);
+        main_menu.addMenuOption("Debug", std::bind(changeMenu, &debug_menu));
 
-    store_menu = main_menu.new_sub_menu("Store", menu_pointers[0], menu_pointers[1]);
-    if (debug)
-        debug_menu = main_menu.new_sub_menu("Debug", menu_pointers[0], menu_pointers[2]);
-
-    main_menu_items.insert({"Store", &initialize});
-    main_menu_items.insert({"Battle", &battle});
-    main_menu_items.insert({"Scout", &scout});
-    main_menu_items.insert({"Gamble", &gamble});
-    main_menu_items.insert({"Hospital", &hospital});
-    if (debug)
-        main_menu_items.insert({"Debug", &initialize});
-    main_menu_items.insert({"Quit", &retire});
-
-    store_menu.item_names.push_back("Troops");
-    store_menu.item_names.push_back("Powerup");
-    store_menu.item_names.push_back("Token");
-    store_menu.item_names.push_back("Items");
-    store_menu.item_names.push_back("Main Menu");
+    store_menu.addMenuOption("Troops", std::bind(store, 0));
+    store_menu.addMenuOption("Powerup", std::bind(store, 1));
+    store_menu.addMenuOption("Token", std::bind(store, 2));
+    store_menu.addMenuOption("Items", std::bind(store, 3));
 
     if (debug) {
-        debug_menu.item_names.push_back("Username");
-        debug_menu.item_names.push_back("Money");
-        debug_menu.item_names.push_back("Troops");
-        debug_menu.item_names.push_back("Battles Won");
-        debug_menu.item_names.push_back("Total Battles");
-        debug_menu.item_names.push_back("Tokens");
-        debug_menu.item_names.push_back("HP");
-        debug_menu.item_names.push_back("Powerups");
-        debug_menu.item_names.push_back("Main Menu");
+        debug_menu.addMenuOption("Username", std::bind(debugger, 0));
+        debug_menu.addMenuOption("Money", std::bind(debugger, 1));
+        debug_menu.addMenuOption("Troops", std::bind(debugger, 2));
+        debug_menu.addMenuOption("Battles Won", std::bind(debugger, 3));
+        debug_menu.addMenuOption("Total Battles", std::bind(debugger, 4));
+        debug_menu.addMenuOption("Tokens", std::bind(debugger, 5));
+        debug_menu.addMenuOption("HP", std::bind(debugger, 6));
+        debug_menu.addMenuOption("Powerups", std::bind(debugger, 7));
     }
 
-    main_menu.add_items(main_menu_items);
-
-    menu_to_show = menu_pointers[0];
+    menu_to_show = &main_menu;
 }
 
 int menu(Menu* menu) {
     while (true) {
         stats();
 
-        menu->display_menu();
-        int choice = get_int(0, menu->item_names.size() - 1, "Enter an option:");
-        if (choice < menu->item_names.size() && choice >= 0) {
-            if (menu->submenus.find(menu->item_names[choice]) != menu->submenus.end()) {
-                menu_to_show = menu->submenus.at(menu->item_names[choice])->self;
+        menu->printMenu();
+        int choice = get_int(0, menu->getSize(), "Enter an option:");
+        if (choice <= menu->getSize() && choice >= 0) {
+            if ((menu->menuId == store_menu.menuId ||
+                 menu->menuId == debug_menu.menuId) &&
+                choice == menu->getSize()) {
+                menu_to_show = menu->getParent();
             } else {
-                if ((menu->name == "Store" || menu->name == "Debug") &&
-                    choice == menu->item_names.size() - 1) {
-                    menu_to_show = menu->parent;
-                } else if (menu->name == "Store") {
-                    store(choice);
-                } else if (menu->name == "Debug") {
-                    debugger(choice);
-                } else {
-                    (menu->item_methods[choice])();
-                }
+                menu->callMenuOption(choice);
             }
         }
         return choice;
