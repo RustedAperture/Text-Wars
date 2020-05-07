@@ -2,9 +2,8 @@
 
 using namespace std;
 
-class Player
-{
-public:
+class Player {
+  public:
     string username;
     bool played_before = false;
     float money = 500;

@@ -6,6 +6,10 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 
 ## Change Log
 
+### Version 1.7
+
+-   Fixed free health care
+
 ### Version 1.6
 
 -   fixed tax math to prevent a divide by zero
