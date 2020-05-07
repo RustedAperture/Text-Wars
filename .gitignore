@@ -1,5 +1,2 @@
-__pycache__
-Cameron
-.vscode/settings.json
-.clang-format
-Build/Cameron.cfg
+.vscode/
+Build/*.cfg
