@@ -34,8 +34,6 @@ void Menu::printMenu() {
     }
     if (this->hasParent) {
         std::cout << this->_menuOptions.size() << ". Previous Menu" << std::endl;
-    } else {
-        std::cout << this->_menuOptions.size() << ". Quit" << std::endl;
     }
 }
 

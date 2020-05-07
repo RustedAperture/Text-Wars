@@ -6,6 +6,10 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 
 ## Change Log
 
+### Version 1.9
+
+-   Added save system
+
 ### Version 1.8
 
 -   Make a menu system that makes more sense

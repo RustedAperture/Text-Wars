@@ -1,6 +1,5 @@
 #include "menu.h"
-#include "player.cpp"
-#include "tsl/ordered_map.h"
+#include "player.h"
 
 #include <stdlib.h>
 
@@ -13,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define VERSION 1.8
+#define VERSION 1.9
 
 using namespace std;
 
@@ -25,10 +24,10 @@ Menu main_menu("Main Menu");
 Menu store_menu("Store Menu", &main_menu);
 Menu debug_menu("Debug Menu", &main_menu);
 Menu* menu_to_show;
-vector<Menu*> menu_pointers;
 
 void retire() {
     cout << "Thanks for playing." << endl;
+    player.savePlayer();
     system("PAUSE");
     exit(3);
 }
@@ -74,18 +73,18 @@ bool get_bool(string prompt) {
 }
 
 void transport() {
-    if (player.troops[0] < 10 && player.troops[1] > 0) {
+    if (player.troops.active_duty < 10 && player.troops.reserve > 0) {
         cout << "Calling in the reserves" << endl;
-        while (player.troops[1] > 0) {
-            player.troops[0]++;
-            player.troops[1]--;
+        while (player.troops.reserve > 0) {
+            player.troops.active_duty++;
+            player.troops.reserve--;
         }
     }
-    if (player.troops[0] > 10) {
+    if (player.troops.active_duty > 10) {
         cout << "Sending to the reserves" << endl;
-        while (player.troops[0] > 10) {
-            player.troops[0]--;
-            player.troops[1]++;
+        while (player.troops.active_duty > 10) {
+            player.troops.active_duty--;
+            player.troops.reserve++;
         }
     }
 }
@@ -93,7 +92,7 @@ void tax() {
     float tax = 13 * player.money / 100;
     if (tax == 0)
         tax = 100;
-    if (player.money > 0 && player.troops[0] > 0) {
+    if (player.money > 0 && player.troops.active_duty > 0) {
         cout << "Paying your troops 13%." << endl;
         system("PAUSE");
         player.money -= tax;
@@ -127,13 +126,13 @@ void stats() {
     system("CLS");
     cout << "----------------------" << endl;
     cout << fixed << "Username:      " << player.username << endl;
-    cout << fixed << "Troops/Extra:  " << player.troops[0] << "/" << player.troops[1]
-         << endl;
+    cout << fixed << "Troops/Extra:  " << player.troops.active_duty << "/"
+         << player.troops.reserve << endl;
     cout << setprecision(2) << fixed << "Money:         " << player.money << endl;
     cout << fixed << "Tokens:        " << player.tokens << endl;
     cout << fixed << "HP:            " << player.hp << endl;
-    cout << fixed << "Nukes/Lasers:  " << player.powerups[0] << "/" << player.powerups[1]
-         << endl;
+    cout << fixed << "Nukes/Lasers:  " << player.powerups.nukes << "/"
+         << player.powerups.lasers << endl;
     cout << "----------------------" << endl;
     if (debug) {
         cout << fixed << "Battles Won:   " << player.battles_won << endl;
@@ -164,7 +163,7 @@ void loot() {
             cout << "You've found two tokens" << endl;
             break;
         case 9:
-            player.troops[0] += 2;
+            player.troops.active_duty += 2;
             cout << "You've gained new recruits" << endl;
             break;
         default:
@@ -176,8 +175,8 @@ void loot() {
 
 int enemygen() {
     srand(time(NULL));
-    float mintroops = player.troops[0] - (player.troops[0] * 0.35);
-    float maxtroops = player.troops[0] * 1.35;
+    float mintroops = player.troops.active_duty - (player.troops.active_duty * 0.35);
+    float maxtroops = player.troops.active_duty * 1.35;
     if (maxtroops == 0)
         maxtroops = 5;
     int mod = (ceil(maxtroops) - floor(mintroops) + 1) + floor(mintroops);
@@ -219,7 +218,7 @@ void store(int submenu) {
                 amount = get_int(0, player.money / price,
                                  "How many would you like to purchase:");
                 bought = purchase(amount, price);
-                player.troops[0] += amount;
+                player.troops.active_duty += amount;
                 break;
             case 1:
                 cout << "Powerup Shop" << endl;
@@ -232,7 +231,11 @@ void store(int submenu) {
                 amount = get_int(0, player.money / price,
                                  "How many would you like to purchase:");
                 bought = purchase(amount, price);
-                player.powerups[item] += amount;
+                if (item == 0) {
+                    player.powerups.nukes += amount;
+                } else {
+                    player.powerups.lasers += amount;
+                }
                 break;
             case 2:
                 cout << "Token Shop" << endl;
@@ -254,9 +257,6 @@ void store(int submenu) {
                 bought = purchase(amount, price);
                 player.hp += amount * 10;
                 break;
-            case 4:
-                menu_to_show = menu_pointers[0];
-                break;
         }
     }
 }
@@ -273,26 +273,26 @@ void battle() {
         return;
     }
     cout << "Enemy Troops: " << enemy_troops << endl;
-    if (player.powerups[0] > 0 || player.powerups[1] > 0) {
+    if (player.powerups.nukes > 0 || player.powerups.lasers > 0) {
         bool prompt;
         bool nuke;
         bool laser;
 
         prompt = get_bool("Would you like to use a powerup?");
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        if (prompt && player.powerups[0] > 0) {
+        if (prompt && player.powerups.nukes > 0) {
             nuke = get_bool("Would you like to use a nuke?");
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (nuke) {
-                player.powerups[0]--;
+                player.powerups.nukes--;
                 earn += enemy_troops * 50;
                 enemy_troops = 0;
             }
-        } else if (prompt && player.powerups[1] > 0) {
+        } else if (prompt && player.powerups.lasers > 0) {
             laser = get_bool("Would you like to use a laser?");
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (laser) {
-                player.powerups[1]--;
+                player.powerups.lasers--;
                 player.money += 5 * 50;
                 enemy_troops -= 5;
             }
@@ -300,25 +300,25 @@ void battle() {
     }
     if (debug)
         cout << "Enemy Troops: " << enemy_troops << endl;
-    if (player.troops[0] == 0)
+    if (player.troops.active_duty == 0)
         player.hp -= 10;
-    if (enemy_troops == ceil(player.troops[0] * 1.5)) {
+    if (enemy_troops == ceil(player.troops.active_duty * 1.5)) {
         cout << "Sir, they attacked before we had the chance." << endl;
         cout << "We lost a HALF of our soldiers." << endl;
-        if (player.troops[0] != 0) {
-            player.troops[0] /= 2;
+        if (player.troops.active_duty != 0) {
+            player.troops.active_duty /= 2;
             player.hp -= 3;
         }
         system("PAUSE");
-    } else if (enemy_troops > player.troops[0]) {
+    } else if (enemy_troops > player.troops.active_duty) {
         cout << "Sir, they attacked before we had the chance." << endl;
         cout << "We lost a member of our family today" << endl;
-        if (player.troops[0] != 0) {
-            player.troops[0]--;
+        if (player.troops.active_duty != 0) {
+            player.troops.active_duty--;
             player.hp--;
         }
         system("PAUSE");
-    } else if (enemy_troops < player.troops[0] && enemy_troops > 0) {
+    } else if (enemy_troops < player.troops.active_duty && enemy_troops > 0) {
         cout << "Sir, We have won the battle." << endl;
         earn += enemy_troops * 10;
         cout << "We have earned: $" << earn << endl;
@@ -414,9 +414,9 @@ void debugger(int var) {
             player.money = get_int(0, int_max, "New Balance:");
             break;
         case 2:
-            cout << fixed << "Current Troops: " << player.troops[0] << endl;
-            cout << fixed << "Current Reservist: " << player.troops[1] << endl;
-            player.troops[0] =
+            cout << fixed << "Current Troops: " << player.troops.active_duty << endl;
+            cout << fixed << "Current Reservist: " << player.troops.reserve << endl;
+            player.troops.active_duty =
                 get_int(0, int_max, "New Troops (anything over 10 will go to reserves):");
             break;
         case 3:
@@ -437,16 +437,20 @@ void debugger(int var) {
             player.hp = get_int(0, int_max, "New HP:");
             break;
         case 7:
-            cout << fixed << "Current Nukes: " << player.powerups[0] << endl;
-            cout << fixed << "Current Lasers: " << player.powerups[1] << endl;
-            player.powerups[0] = get_int(0, int_max, "New Nukes:");
-            player.powerups[1] = get_int(0, int_max, "New Lasers:");
+            cout << fixed << "Current Nukes: " << player.powerups.nukes << endl;
+            cout << fixed << "Current Lasers: " << player.powerups.lasers << endl;
+            player.powerups.nukes = get_int(0, int_max, "New Nukes:");
+            player.powerups.lasers = get_int(0, int_max, "New Lasers:");
             break;
     }
 }
 
 void changeMenu(Menu* menu) {
     menu_to_show = menu;
+}
+
+void save() {
+    player.savePlayer();
 }
 
 void initialize() {
@@ -456,8 +460,10 @@ void initialize() {
     main_menu.addMenuOption("Scout", scout);
     main_menu.addMenuOption("Gamble", gamble);
     main_menu.addMenuOption("Hospital", hospital);
-    if (debug)
+    if (debug) {
         main_menu.addMenuOption("Debug", std::bind(changeMenu, &debug_menu));
+    }
+    main_menu.addMenuOption("Quit & Save", retire);
 
     store_menu.addMenuOption("Troops", std::bind(store, 0));
     store_menu.addMenuOption("Powerup", std::bind(store, 1));
@@ -473,6 +479,7 @@ void initialize() {
         debug_menu.addMenuOption("Tokens", std::bind(debugger, 5));
         debug_menu.addMenuOption("HP", std::bind(debugger, 6));
         debug_menu.addMenuOption("Powerups", std::bind(debugger, 7));
+        debug_menu.addMenuOption("Save", save);
     }
 
     menu_to_show = &main_menu;
@@ -519,6 +526,9 @@ int main(int argc, char* argv[]) {
 
     if (yes_no) {
         player.played_before = true;
+        player.loadPlayer();
+        cout << "Loaded your save file. To start a new game delete your old one." << endl;
+        system("PAUSE");
     } else {
         player.played_before = false;
     }

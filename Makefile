@@ -8,7 +8,7 @@ OBJS = $(wildcard $(SRC_DIR)/*.cpp)
 CC = g++
 
 #INCLUDE_PATHS specifies the additional include paths we'll need
-INCLUDE_PATHS = -ID:\MinGW\include\SDL2 -I$(INC_DIR)
+INCLUDE_PATHS = -ID:\MinGW\include\config4cpp -I$(INC_DIR)
 
 #LIBRARY_PATHS specifies the additional library paths we'll need
 LIBRARY_PATHS = -LD:\MinGW\lib
@@ -19,11 +19,11 @@ LIBRARY_PATHS = -LD:\MinGW\lib
 COMPILER_FLAGS = -w 
 
 #LINKER_FLAGS specifies the libraries we're linking against
-LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_Image
+LINKER_FLAGS = -lmingw32 -lconfig4cpp
 
 #OBJ_NAME specifies the name of our exectuable
 OBJ_NAME = Build\TextWars
 
 #This is the target that compiles our executable
 all : $(OBJS)
-	$(CC) $(OBJS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+	$(CC) $(OBJS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME) -std=c++11
