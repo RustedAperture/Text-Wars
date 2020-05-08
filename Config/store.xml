@@ -5,6 +5,7 @@
     <category name="Powerups">
         <item name="Nuke" cost="1250" var="powerups.nukes"/>
         <item name="Laser" cost="650" var="powerups.lasers"/>
+        <item name="Bomb" cost="1" var="powerups.bomb"/>
     </category>
     <category name="Items">
         <item name="Token" cost="10" var="tokens"/>

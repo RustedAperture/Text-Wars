@@ -50,26 +50,10 @@ int Player::savePlayer() {
     save.open(ss.str());
 
     save << "<player username=\"" << this->username << "\">" << std::endl;
-    save << "\t<property name=\"played_before\" value=\""
-         << this->testing["played_before"] << "\"/>" << std::endl;
-    save << "\t<property name=\"money\" value=\"" << this->testing["money"] << "\"/>"
-         << std::endl;
-    save << "\t<property name=\"troops.active_duty\" value=\""
-         << this->testing["troops.active_duty"] << "\"/>" << std::endl;
-    save << "\t<property name=\"troops.reserve\" value=\""
-         << this->testing["troops.reserve"] << "\"/>" << std::endl;
-    save << "\t<property name=\"battles_won\" value=\"" << this->testing["battles_won"]
-         << "\"/>" << std::endl;
-    save << "\t<property name=\"total_battles\" value=\""
-         << this->testing["total_battles"] << "\"/>" << std::endl;
-    save << "\t<property name=\"tokens\" value=\"" << this->testing["tokens"] << "\"/>"
-         << std::endl;
-    save << "\t<property name=\"hp\" value=\"" << this->testing["hp"] << "\"/>"
-         << std::endl;
-    save << "\t<property name=\"powerups.nukes\" value=\""
-         << this->testing["powerups.nukes"] << "\"/>" << std::endl;
-    save << "\t<property name=\"powerups.lasers\" value=\""
-         << this->testing["powerups.lasers"] << "\"/>" << std::endl;
+    for (auto const& playerVar : this->testing) {
+        save << "\t<property name=\"" << playerVar.first << "\" value=\""
+             << playerVar.second << "\"/>" << std::endl;
+    }
     save << "</player>" << std::endl;
     return 0;
 }
