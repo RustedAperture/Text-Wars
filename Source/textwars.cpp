@@ -1,8 +1,10 @@
 #include "menu.h"
 #include "player.h"
+#include "store.h"
 
 #include <stdlib.h>
 
+#include <any>
 #include <cmath>
 #include <ctime>
 #include <iomanip>
@@ -12,13 +14,14 @@
 #include <string>
 #include <vector>
 
-#define VERSION 1.9
+#define VERSION 2.0
 
 using namespace std;
 
 bool debug = false;
 
 Player player;
+Store shop;
 
 Menu main_menu("Main Menu");
 Menu store_menu("Store Menu", &main_menu);
@@ -73,50 +76,51 @@ bool get_bool(string prompt) {
 }
 
 void transport() {
-    if (player.troops.active_duty < 10 && player.troops.reserve > 0) {
+    if (player.testing["troops.active_duty"] < 10 &&
+        player.testing["troops.reserve"] > 0) {
         cout << "Calling in the reserves" << endl;
-        while (player.troops.reserve > 0) {
-            player.troops.active_duty++;
-            player.troops.reserve--;
+        while (player.testing["troops.reserve"] > 0) {
+            player.testing["troops.active_duty"]++;
+            player.testing["troops.reserve"]--;
         }
     }
-    if (player.troops.active_duty > 10) {
+    if (player.testing["troops.active_duty"] > 10) {
         cout << "Sending to the reserves" << endl;
-        while (player.troops.active_duty > 10) {
-            player.troops.active_duty--;
-            player.troops.reserve++;
+        while (player.testing["troops.active_duty"] > 10) {
+            player.testing["troops.active_duty"]--;
+            player.testing["troops.reserve"]++;
         }
     }
 }
 void tax() {
-    float tax = 13 * player.money / 100;
+    float tax = 13 * player.testing["money"] / 100;
     if (tax == 0)
         tax = 100;
-    if (player.money > 0 && player.troops.active_duty > 0) {
+    if (player.testing["money"] > 0 && player.testing["troops.active_duty"] > 0) {
         cout << "Paying your troops 13%." << endl;
         system("PAUSE");
-        player.money -= tax;
-    } else if (player.money <= 0) {
+        player.testing["money"] -= tax;
+    } else if (player.testing["money"] <= 0) {
         cout << "It's your lucky day!" << endl;
         system("PAUSE");
-        player.money += tax;
+        player.testing["money"] += tax;
     }
 }
 
 void check() {
-    if (player.hp <= 0) {
+    if (player.testing["hp"] <= 0) {
         retire();
     }
-    if (player.battles_won % 5 == 0 && player.battles_won > 0) {
-        player.tokens++;
-        player.money += 200;
-        player.battles_won = 0;
+    if (player.testing["battles_won"] % 5 == 0 && player.testing["battles_won"] > 0) {
+        player.testing["tokens"]++;
+        player.testing["money"] += 200;
+        player.testing["battles_won"] = 0;
         cout << "You have recieved a paycheck." << endl;
         system("PAUSE");
     }
-    if (player.total_battles % 5 == 0 && player.total_battles > 0) {
+    if (player.testing["total_battles"] % 5 == 0 && player.testing["total_battles"] > 0) {
         tax();
-        player.total_battles = 0;
+        player.testing["total_battles"] = 0;
     }
 }
 
@@ -126,17 +130,18 @@ void stats() {
     system("CLS");
     cout << "----------------------" << endl;
     cout << fixed << "Username:      " << player.username << endl;
-    cout << fixed << "Troops/Extra:  " << player.troops.active_duty << "/"
-         << player.troops.reserve << endl;
-    cout << setprecision(2) << fixed << "Money:         " << player.money << endl;
-    cout << fixed << "Tokens:        " << player.tokens << endl;
-    cout << fixed << "HP:            " << player.hp << endl;
-    cout << fixed << "Nukes/Lasers:  " << player.powerups.nukes << "/"
-         << player.powerups.lasers << endl;
+    cout << fixed << "Troops/Extra:  " << player.testing["troops.active_duty"] << "/"
+         << player.testing["troops.reserve"] << endl;
+    cout << setprecision(2) << fixed << "Money:         " << player.testing["money"]
+         << endl;
+    cout << fixed << "Tokens:        " << player.testing["tokens"] << endl;
+    cout << fixed << "HP:            " << player.testing["hp"] << endl;
+    cout << fixed << "Nukes/Lasers:  " << player.testing["powerups.nukes"] << "/"
+         << player.testing["powerups.lasers"] << endl;
     cout << "----------------------" << endl;
     if (debug) {
-        cout << fixed << "Battles Won:   " << player.battles_won << endl;
-        cout << fixed << "Total Battles: " << player.total_battles << endl;
+        cout << fixed << "Battles Won:   " << player.testing["battles_won"] << endl;
+        cout << fixed << "Total Battles: " << player.testing["total_battles"] << endl;
         cout << "----------------------" << endl;
     }
     cout << endl;
@@ -147,27 +152,27 @@ void loot() {
     int win = rand() % 10 + 1;
     switch (win) {
         case 1:
-            player.money += 100;
+            player.testing["money"] += 100;
             cout << "You've found $100 in loot" << endl;
             break;
         case 3:
-            player.money += 200;
+            player.testing["money"] += 200;
             cout << "You've found $200 in loot" << endl;
             break;
         case 5:
-            player.tokens += 1;
+            player.testing["tokens"] += 1;
             cout << "You've found a token" << endl;
             break;
         case 7:
-            player.tokens += 2;
+            player.testing["tokens"] += 2;
             cout << "You've found two tokens" << endl;
             break;
         case 9:
-            player.troops.active_duty += 2;
+            player.testing["troops.active_duty"] += 2;
             cout << "You've gained new recruits" << endl;
             break;
         default:
-            player.money += 5;
+            player.testing["money"] += 5;
             cout << "You got $5 as a consolation prize" << endl;
             break;
     }
@@ -175,8 +180,9 @@ void loot() {
 
 int enemygen() {
     srand(time(NULL));
-    float mintroops = player.troops.active_duty - (player.troops.active_duty * 0.35);
-    float maxtroops = player.troops.active_duty * 1.35;
+    float mintroops = player.testing["troops.active_duty"] -
+                      (player.testing["troops.active_duty"] * 0.35);
+    float maxtroops = player.testing["troops.active_duty"] * 1.35;
     if (maxtroops == 0)
         maxtroops = 5;
     int mod = (ceil(maxtroops) - floor(mintroops) + 1) + floor(mintroops);
@@ -188,76 +194,35 @@ int enemygen() {
     return enemies;
 }
 
-bool purchase(int amount, int price) {
-    if (amount * price <= player.money) {
-        player.money -= price * amount;
-        return true;
-    } else {
-        cout << "Not enough player.money!" << endl;
-        system("PAUSE");
-        return false;
-    }
+bool purchase(Item item) {
+    stats();
+
+    int amount;
+
+    cout << "Store Menu" << endl;
+    cout << "--------------------" << endl;
+    shop.showItem(item);
+    amount = get_int(0, player.testing["money"] / item.cost,
+                     "How many would you like to buy:");
+    player.testing["money"] -= amount * item.cost;
+    player.testing[item.var] += amount;
+    return true;
 }
 
-void store(int submenu) {
+void store(std::string submenu) {
     bool bought = false;
+
+    int choice;
+
+    std::vector<Item> items = shop.getItems(submenu);
 
     while (!(bought)) {
         stats();
-
-        int amount;
-        int item;
-        int price;
-
-        switch (submenu) {
-            case 0:
-                cout << "Troop Shop" << endl;
-                cout << "----------------------" << endl;
-                cout << "cost per troop: $50" << endl;
-                price = 50;
-                amount = get_int(0, player.money / price,
-                                 "How many would you like to purchase:");
-                bought = purchase(amount, price);
-                player.troops.active_duty += amount;
-                break;
-            case 1:
-                cout << "Powerup Shop" << endl;
-                cout << "----------------------" << endl;
-                cout << "0. nuke: $1250" << endl;
-                cout << "1. laser: $650" << endl;
-                cout << "Which item would you like to purchase (0-1): ";
-                cin >> item;
-                price = item == 0 ? 1250 : 650;
-                amount = get_int(0, player.money / price,
-                                 "How many would you like to purchase:");
-                bought = purchase(amount, price);
-                if (item == 0) {
-                    player.powerups.nukes += amount;
-                } else {
-                    player.powerups.lasers += amount;
-                }
-                break;
-            case 2:
-                cout << "Token Shop" << endl;
-                cout << "----------------------" << endl;
-                cout << "cost per token: $10" << endl;
-                price = 10;
-                amount = get_int(0, player.money / price,
-                                 "How many would you like to purchase:");
-                bought = purchase(amount, price);
-                player.tokens += amount;
-                break;
-            case 3:
-                cout << "Item Shop" << endl;
-                cout << "----------------------" << endl;
-                cout << "First Aid Kit: $50" << endl;
-                price = 50;
-                amount = get_int(0, player.money / price,
-                                 "How many would you like to purchase:");
-                bought = purchase(amount, price);
-                player.hp += amount * 10;
-                break;
-        }
+        cout << "Store Menu" << endl;
+        cout << "--------------------" << endl;
+        shop.showCategory(submenu);
+        choice = get_int(0, items.size() - 1, "Please enter an item to purchase:");
+        bought = purchase(items[choice]);
     }
 }
 
@@ -273,57 +238,57 @@ void battle() {
         return;
     }
     cout << "Enemy Troops: " << enemy_troops << endl;
-    if (player.powerups.nukes > 0 || player.powerups.lasers > 0) {
+    if (player.testing["powerups.nukes"] > 0 || player.testing["powerups.lasers"] > 0) {
         bool prompt;
         bool nuke;
         bool laser;
 
         prompt = get_bool("Would you like to use a powerup?");
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        if (prompt && player.powerups.nukes > 0) {
+        if (prompt && player.testing["powerups.nukes"] > 0) {
             nuke = get_bool("Would you like to use a nuke?");
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (nuke) {
-                player.powerups.nukes--;
+                player.testing["powerups.nukes"]--;
                 earn += enemy_troops * 50;
                 enemy_troops = 0;
             }
-        } else if (prompt && player.powerups.lasers > 0) {
+        } else if (prompt && player.testing["powerups.lasers"] > 0) {
             laser = get_bool("Would you like to use a laser?");
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             if (laser) {
-                player.powerups.lasers--;
-                player.money += 5 * 50;
+                player.testing["powerups.lasers"]--;
+                player.testing["money"] += 5 * 50;
                 enemy_troops -= 5;
             }
         }
     }
     if (debug)
         cout << "Enemy Troops: " << enemy_troops << endl;
-    if (player.troops.active_duty == 0)
-        player.hp -= 10;
-    if (enemy_troops == ceil(player.troops.active_duty * 1.5)) {
+    if (player.testing["troops.active_duty"] == 0)
+        player.testing["hp"] -= 10;
+    if (enemy_troops == ceil(player.testing["troops.active_duty"] * 1.5)) {
         cout << "Sir, they attacked before we had the chance." << endl;
         cout << "We lost a HALF of our soldiers." << endl;
-        if (player.troops.active_duty != 0) {
-            player.troops.active_duty /= 2;
-            player.hp -= 3;
+        if (player.testing["troops.active_duty"] != 0) {
+            player.testing["troops.active_duty"] /= 2;
+            player.testing["hp"] -= 3;
         }
         system("PAUSE");
-    } else if (enemy_troops > player.troops.active_duty) {
+    } else if (enemy_troops > player.testing["troops.active_duty"]) {
         cout << "Sir, they attacked before we had the chance." << endl;
         cout << "We lost a member of our family today" << endl;
-        if (player.troops.active_duty != 0) {
-            player.troops.active_duty--;
-            player.hp--;
+        if (player.testing["troops.active_duty"] != 0) {
+            player.testing["troops.active_duty"]--;
+            player.testing["hp"]--;
         }
         system("PAUSE");
-    } else if (enemy_troops < player.troops.active_duty && enemy_troops > 0) {
+    } else if (enemy_troops < player.testing["troops.active_duty"] && enemy_troops > 0) {
         cout << "Sir, We have won the battle." << endl;
         earn += enemy_troops * 10;
         cout << "We have earned: $" << earn << endl;
-        player.money += earn;
-        player.battles_won++;
+        player.testing["money"] += earn;
+        player.testing["battles_won"]++;
         cout << "Checking for extra rewards" << endl;
         loot();
         system("PAUSE");
@@ -338,7 +303,7 @@ void battle() {
         battle();
     }
 
-    player.total_battles++;
+    player.testing["total_battles"]++;
     return;
 }
 
@@ -362,26 +327,26 @@ void scout() {
 void gamble() {
     srand(time(NULL));
     int gamble = rand() % 10 + 1;
-    if (player.money == 0) {
+    if (player.testing["money"] == 0) {
         cout << "Come back when you have money to loose!" << endl;
         system("PAUSE");
-    } else if (player.tokens == 0) {
+    } else if (player.testing["tokens"] == 0) {
         cout << "You Dont have any tokens to gamble right now!" << endl;
         system("PAUSE");
     } else {
-        if (player.tokens > 0 && gamble % 2 != 0) {
+        if (player.testing["tokens"] > 0 && gamble % 2 != 0) {
             loot();
-        } else if (player.tokens > 0 && gamble == 1) {
+        } else if (player.testing["tokens"] > 0 && gamble == 1) {
             cout << "You Lost $100" << endl;
-            player.money -= 100;
-        } else if (player.tokens > 0 && gamble == 3) {
+            player.testing["money"] -= 100;
+        } else if (player.testing["tokens"] > 0 && gamble == 3) {
             cout << "You Lost $200" << endl;
-            player.money -= 200;
+            player.testing["money"] -= 200;
         } else {
             cout << "Better luck next time" << endl;
         }
         system("PAUSE");
-        player.tokens--;
+        player.testing["tokens"]--;
     }
 }
 
@@ -394,9 +359,10 @@ void hospital() {
     cout << "----------------------" << endl;
     cout << "The cost to visit is: $" << cost << "/hr" << endl;
     cout << "This will heal at a rate of: " << heal << endl;
-    time = get_int(0, player.money / cost, "How long would you like to stay for:");
-    player.hp += heal * time;
-    player.money -= cost * time;
+    time = get_int(0, player.testing["money"] / cost,
+                   "How long would you like to stay for:");
+    player.testing["hp"] += heal * time;
+    player.testing["money"] -= cost * time;
 }
 
 void debugger(int var) {
@@ -410,37 +376,44 @@ void debugger(int var) {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             break;
         case 1:
-            cout << fixed << "Current Balance: " << player.money << endl;
-            player.money = get_int(0, int_max, "New Balance:");
+            cout << fixed << "Current Balance: " << player.testing["money"] << endl;
+            player.testing["money"] = get_int(0, int_max, "New Balance:");
             break;
         case 2:
-            cout << fixed << "Current Troops: " << player.troops.active_duty << endl;
-            cout << fixed << "Current Reservist: " << player.troops.reserve << endl;
-            player.troops.active_duty =
+            cout << fixed << "Current Troops: " << player.testing["troops.active_duty"]
+                 << endl;
+            cout << fixed << "Current Reservist: " << player.testing["troops.reserve"]
+                 << endl;
+            player.testing["troops.active_duty"] =
                 get_int(0, int_max, "New Troops (anything over 10 will go to reserves):");
             break;
         case 3:
-            cout << fixed << "Current Battles Won: " << player.battles_won << endl;
-            player.battles_won = get_int(0, int_max, "New Battles Won:");
+            cout << fixed << "Current Battles Won: " << player.testing["battles_won"]
+                 << endl;
+            player.testing["battles_won"] = get_int(0, int_max, "New Battles Won:");
             break;
         case 4:
-            cout << fixed << "Current Number of battles: " << player.total_battles
+            cout << fixed
+                 << "Current Number of battles: " << player.testing["total_battles"]
                  << endl;
-            player.total_battles = get_int(0, int_max, "New number of battles:");
+            player.testing["total_battles"] =
+                get_int(0, int_max, "New number of battles:");
             break;
         case 5:
-            cout << fixed << "Current Tokesn: " << player.tokens << endl;
-            player.tokens = get_int(0, int_max, "New Tokens:");
+            cout << fixed << "Current Tokesn: " << player.testing["tokens"] << endl;
+            player.testing["tokens"] = get_int(0, int_max, "New Tokens:");
             break;
         case 6:
-            cout << fixed << "Current HP: " << player.hp << endl;
-            player.hp = get_int(0, int_max, "New HP:");
+            cout << fixed << "Current HP: " << player.testing["hp"] << endl;
+            player.testing["hp"] = get_int(0, int_max, "New HP:");
             break;
         case 7:
-            cout << fixed << "Current Nukes: " << player.powerups.nukes << endl;
-            cout << fixed << "Current Lasers: " << player.powerups.lasers << endl;
-            player.powerups.nukes = get_int(0, int_max, "New Nukes:");
-            player.powerups.lasers = get_int(0, int_max, "New Lasers:");
+            cout << fixed << "Current Nukes: " << player.testing["powerups.nukes"]
+                 << endl;
+            cout << fixed << "Current Lasers: " << player.testing["powerups.lasers"]
+                 << endl;
+            player.testing["powerups.nukes"] = get_int(0, int_max, "New Nukes:");
+            player.testing["powerups.lasers"] = get_int(0, int_max, "New Lasers:");
             break;
     }
 }
@@ -454,6 +427,7 @@ void save() {
 }
 
 void initialize() {
+    shop.parseStoreCFG();
     // Method to initialize the menu system
     main_menu.addMenuOption("Store", std::bind(changeMenu, &store_menu));
     main_menu.addMenuOption("Battle", battle);
@@ -465,10 +439,9 @@ void initialize() {
     }
     main_menu.addMenuOption("Quit & Save", retire);
 
-    store_menu.addMenuOption("Troops", std::bind(store, 0));
-    store_menu.addMenuOption("Powerup", std::bind(store, 1));
-    store_menu.addMenuOption("Token", std::bind(store, 2));
-    store_menu.addMenuOption("Items", std::bind(store, 3));
+    for (std::string category : shop.getCategories()) {
+        store_menu.addMenuOption(category, std::bind(store, category));
+    }
 
     if (debug) {
         debug_menu.addMenuOption("Username", std::bind(debugger, 0));
@@ -505,6 +478,8 @@ int menu(Menu* menu) {
 }
 
 int main(int argc, char* argv[]) {
+    string username;
+
     for (int i = 1; i < argc; ++i) {
         string arg = argv[i];
         if (arg == "--debug") {
@@ -525,12 +500,10 @@ int main(int argc, char* argv[]) {
     yes_no = get_bool("Have you played before?");
 
     if (yes_no) {
-        player.played_before = true;
+        player.testing["played_before"] = true;
         player.loadPlayer();
-        cout << "Loaded your save file. To start a new game delete your old one." << endl;
-        system("PAUSE");
     } else {
-        player.played_before = false;
+        player.testing["played_before"] = false;
     }
 
     cin.ignore(numeric_limits<streamsize>::max(), '\n');

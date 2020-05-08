@@ -6,6 +6,11 @@ Description: A fun text game where you can battle a enemy, gamble, or become a m
 
 ## Change Log
 
+### Version 2.0
+
+-   Added store system
+-   Changed the save system to use tinyXML2
+
 ### Version 1.9
 
 -   Added save system

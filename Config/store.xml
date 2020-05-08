@@ -1,0 +1,13 @@
+<scope name="store">
+    <category name="Troops">
+        <item name="Troop" cost="50" var="troops.active_duty"/>
+    </category>
+    <category name="Powerups">
+        <item name="Nuke" cost="1250" var="powerups.nukes"/>
+        <item name="Laser" cost="650" var="powerups.lasers"/>
+    </category>
+    <category name="Items">
+        <item name="Token" cost="10" var="tokens"/>
+        <item name="First Aid" cost="50" var="hp"/>
+    </category>
+</scope>

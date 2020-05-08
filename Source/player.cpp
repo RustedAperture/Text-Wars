@@ -1,77 +1,75 @@
 #include "player.h"
 
-#include <config4cpp/Configuration.h>
+#include "tinyxml2.h"
 
+#include <any>
 #include <sstream>
 
-using namespace config4cpp;
+using namespace tinyxml2;
 
 Player::Player() {
-    this->played_before = false;
-    this->money = 500;
-    this->troops = {1, 0};
-    this->battles_won = 0;
-    this->total_battles = 0;
-    this->tokens = 1;
-    this->hp = 50;
-    this->powerups = {0, 0};
+    this->testing["played_before"] = 0;
+    this->testing["money"] = 500;
+    this->testing["troops.active_duty"] = 1;
+    this->testing["troops.reserve"] = 0;
+    this->testing["battles_won"] = 0;
+    this->testing["total_battles"] = 0;
+    this->testing["tokens"] = 1;
+    this->testing["hp"] = 50;
+    this->testing["powerups.nukes"] = 0;
+    this->testing["powerups.lasers"] = 0;
 }
 
 Player::~Player() {}
 
 int Player::loadPlayer() {
+    XMLDocument doc;
     std::stringstream ss;
-    ss << this->username << ".cfg";
+    ss << this->username << ".save";
+    doc.LoadFile(ss.str().c_str());
 
-    Configuration* cfg = Configuration::create();
-    const char* cfgFile = ss.str().c_str();
-    const char* scope = this->username.c_str();
+    XMLElement* pPlayer = doc.FirstChildElement("player");
+    XMLElement* pProperty = pPlayer->FirstChildElement("property");
 
-    try {
-        cfg->parse(cfgFile);
-        this->played_before = cfg->lookupBoolean(scope, "played_before");
-        this->money = cfg->lookupInt(scope, "money");
-        this->troops.active_duty = cfg->lookupInt(scope, "troops.active_duty");
-        this->troops.reserve = cfg->lookupInt(scope, "troops.reserve");
-        this->battles_won = cfg->lookupInt(scope, "battles_won");
-        this->total_battles = cfg->lookupInt(scope, "total_battles");
-        this->tokens = cfg->lookupInt(scope, "tokens");
-        this->hp = cfg->lookupInt(scope, "hp");
-        this->powerups.nukes = cfg->lookupInt(scope, "powerups.nukes");
-        this->powerups.lasers = cfg->lookupInt(scope, "powerups.lasers");
-    } catch (const ConfigurationException& ex) {
-        std::cerr << ex.c_str() << std::endl;
-        cfg->destroy();
-        return 1;
+    if (pProperty != NULL) {
+        while (pProperty) {
+            std::string name = pProperty->Attribute("name");
+            int value = pProperty->IntAttribute("value");
+            this->testing[name] = value;
+            pProperty = pProperty->NextSiblingElement("property");
+        }
     }
-    cfg->destroy();
+
     return 0;
 }
 
 int Player::savePlayer() {
+    std::ofstream save;
     std::stringstream ss;
-    ss << this->username << ".cfg";
+    ss << this->username << ".save";
+    save.open(ss.str());
 
-    std::ofstream cfgFile;
-    cfgFile.open(ss.str());
-    cfgFile << this->username << " {" << std::endl;
-    if (this->played_before) {
-        cfgFile << "\tplayed_before = \"true\";" << std::endl;
-    } else {
-        cfgFile << "\tplayed_before = \"false\";" << std::endl;
-    }
-    cfgFile << "\tmoney = \"" << this->money << "\";" << std::endl;
-    cfgFile << "\ttroops {" << std::endl;
-    cfgFile << "\t\tactive_duty = \"" << this->troops.active_duty << "\";" << std::endl;
-    cfgFile << "\t\treserve = \"" << this->troops.reserve << "\";" << std::endl;
-    cfgFile << "\t};" << std::endl;
-    cfgFile << "\tbattles_won = \"" << this->battles_won << "\";" << std::endl;
-    cfgFile << "\ttotal_battles = \"" << this->total_battles << "\";" << std::endl;
-    cfgFile << "\ttokens = \"" << this->tokens << "\";" << std::endl;
-    cfgFile << "\thp = \"" << this->hp << "\";" << std::endl;
-    cfgFile << "\tpowerups {" << std::endl;
-    cfgFile << "\t\tnukes = \"" << this->powerups.nukes << "\";" << std::endl;
-    cfgFile << "\t\tlasers = \"" << this->powerups.lasers << "\";" << std::endl;
-    cfgFile << "\t};" << std::endl;
-    cfgFile << "};" << std::endl;
+    save << "<player username=\"" << this->username << "\">" << std::endl;
+    save << "\t<property name=\"played_before\" value=\""
+         << this->testing["played_before"] << "\"/>" << std::endl;
+    save << "\t<property name=\"money\" value=\"" << this->testing["money"] << "\"/>"
+         << std::endl;
+    save << "\t<property name=\"troops.active_duty\" value=\""
+         << this->testing["troops.active_duty"] << "\"/>" << std::endl;
+    save << "\t<property name=\"troops.reserve\" value=\""
+         << this->testing["troops.reserve"] << "\"/>" << std::endl;
+    save << "\t<property name=\"battles_won\" value=\"" << this->testing["battles_won"]
+         << "\"/>" << std::endl;
+    save << "\t<property name=\"total_battles\" value=\""
+         << this->testing["total_battles"] << "\"/>" << std::endl;
+    save << "\t<property name=\"tokens\" value=\"" << this->testing["tokens"] << "\"/>"
+         << std::endl;
+    save << "\t<property name=\"hp\" value=\"" << this->testing["hp"] << "\"/>"
+         << std::endl;
+    save << "\t<property name=\"powerups.nukes\" value=\""
+         << this->testing["powerups.nukes"] << "\"/>" << std::endl;
+    save << "\t<property name=\"powerups.lasers\" value=\""
+         << this->testing["powerups.lasers"] << "\"/>" << std::endl;
+    save << "</player>" << std::endl;
+    return 0;
 }
